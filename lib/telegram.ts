@@ -1,12 +1,43 @@
-// src/lib/telegram.ts
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const tg = (window as any)?.Telegram?.WebApp
+declare global {
+	interface TelegramUser {
+		id: number
+		is_bot?: boolean
+		first_name: string
+		last_name?: string
+		username?: string
+		language_code?: string
+	}
 
-export const getTelegramUser = () => {
-	if (!tg) return null
-	return tg.initDataUnsafe?.user || null
+	interface TelegramWebApp {
+		initDataUnsafe?: {
+			user?: TelegramUser
+		}
+		expand: () => void
+	}
+
+	interface Window {
+		Telegram?: {
+			WebApp?: TelegramWebApp
+		}
+	}
 }
 
-export const expandWebApp = () => {
+export function getTelegramWebApp() {
+	if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+		return window.Telegram.WebApp
+	}
+	return null
+}
+
+export function expandWebApp() {
+	const tg = getTelegramWebApp()
 	if (tg) tg.expand()
+}
+
+export function getTelegramUser() {
+	const tg = getTelegramWebApp()
+	if (tg?.initDataUnsafe?.user) {
+		return tg.initDataUnsafe.user
+	}
+	return null
 }
