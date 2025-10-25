@@ -15,16 +15,21 @@ export default function HomePage() {
 	const [user, setUser] = useState<TelegramUser | null>(null)
 
 	useEffect(() => {
-		// Bu kod faqat browserda ishlaydi
 		if (typeof window !== 'undefined') {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const tg = (window as any).Telegram?.WebApp
+			console.log('✅ Telegram WebApp obyekt:', tg)
+
 			if (tg) {
 				tg.ready()
 				tg.expand()
+				console.log('🧩 initDataUnsafe:', tg.initDataUnsafe)
+				console.log('👤 Telegram foydalanuvchi:', tg.initDataUnsafe?.user)
 				startTransition(() => {
 					setUser(tg.initDataUnsafe?.user || null)
 				})
+			} else {
+				console.warn('❌ Telegram WebApp topilmadi!')
 			}
 		}
 	}, [])
