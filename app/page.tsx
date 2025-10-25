@@ -1,6 +1,6 @@
 'use client'
 
-import { expandWebApp, getTelegramUser } from '@/lib/telegram'
+import Image from 'next/image'
 import { startTransition, useEffect, useState } from 'react'
 
 interface TelegramUser {
@@ -8,20 +8,25 @@ interface TelegramUser {
 	first_name: string
 	last_name?: string
 	username?: string
+	photo_url?: string
 }
 
 export default function HomePage() {
 	const [user, setUser] = useState<TelegramUser | null>(null)
 
 	useEffect(() => {
-		// Telegram WebApp’ni kengaytirish
-		expandWebApp()
-
-		// User ma’lumotlarini olish (faqat clientda)
-		const tgUser = getTelegramUser()
-		startTransition(() => {
-			setUser(tgUser)
-		})
+		// Bu kod faqat browserda ishlaydi
+		if (typeof window !== 'undefined') {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const tg = (window as any).Telegram?.WebApp
+			if (tg) {
+				tg.ready()
+				tg.expand()
+				startTransition(() => {
+					setUser(tg.initDataUnsafe?.user || null)
+				})
+			}
+		}
 	}, [])
 
 	if (!user) {
@@ -33,19 +38,17 @@ export default function HomePage() {
 	}
 
 	return (
-		<div className='flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6'>
-			<h1 className='text-2xl font-bold mb-4'>
-				👋 Welcome, {user.first_name}!
-			</h1>
-			{user.username && <p className='text-gray-600'>@{user.username}</p>}
-			<p className='mt-2 text-sm text-gray-500'>Your Telegram ID: {user.id}</p>
-
-			<button
-				onClick={() => alert(`Hello ${user.first_name}!`)}
-				className='mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition'
-			>
-				Tap me
-			</button>
+		<div className='flex flex-col items-center justify-center h-screen'>
+			<h1 className='text-2xl font-bold mb-4'>👋 Salom, {user.first_name}!</h1>
+			<p className='text-gray-700'>Telegram ID: {user.id}</p>
+			{user.username && <p>@{user.username}</p>}
+			{user.photo_url && (
+				<Image
+					src={user.photo_url}
+					alt={user.first_name}
+					className='mt-4 rounded-full w-24 h-24'
+				/>
+			)}
 		</div>
 	)
 }

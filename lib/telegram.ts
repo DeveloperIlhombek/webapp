@@ -41,3 +41,4 @@ export function getTelegramUser() {
 	}
 	return null
 }
+// 8446903617:AAE9ULmrxvRuzus8061n1sz4lJrL_PPIFTU
