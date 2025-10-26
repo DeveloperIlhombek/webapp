@@ -1,29 +1,41 @@
-<!DOCTYPE html>
-<html lang="uz">
+<!doctype html>
+<html>
 
 <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>Telegram WebApp Test</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Telegram WebApp Diagnostic</title>
+	<style>
+		body {
+			font-family: system-ui, Segoe UI, Roboto;
+			padding: 20px
+		}
+	</style>
 </head>
 
 <body>
-	<h2 id="status">⏳ Telegram WebApp sinovi...</h2>
+	<h2>Telegram WebApp Diagnostic</h2>
+	<pre id="out">⏳ tekshirilyapti...</pre>
 	<script>
+		function write(s) { document.getElementById('out').innerText += s + "\n" }
+
 		try {
+			write("Location: " + window.location.href)
+			write("Referrer: " + document.referrer)
+			write("UserAgent: " + navigator.userAgent)
+			write("Window top === self: " + (window.top === window.self))
+			write("Has opener: " + Boolean(window.opener))
+			write("")
 			const tg = window.Telegram?.WebApp
 			if (!tg) {
-				document.getElementById("status").innerText =
-					"❌ window.Telegram.WebApp topilmadi!"
-			} else if (tg.initDataUnsafe?.user) {
-				document.getElementById("status").innerText =
-					"✅ Telegram foydalanuvchisi: " + tg.initDataUnsafe.user.first_name
+				write("❌ window.Telegram.WebApp topilmadi!")
 			} else {
-				document.getElementById("status").innerText =
-					"⚠️ Telegram WebApp bor, lekin foydalanuvchi maʼlumotlari yoʻq."
+				write("✅ window.Telegram.WebApp mavjud")
+				write("initDataUnsafe: " + JSON.stringify(tg.initDataUnsafe || null, null, 2))
+				try { write("isExpanded func: " + typeof tg.expand) } catch (e) { }
 			}
 		} catch (e) {
-			document.getElementById("status").innerText = "❌ Xatolik: " + e.message
+			write("❌ Xatolik: " + (e && e.message ? e.message : String(e)))
 		}
 	</script>
 </body>
