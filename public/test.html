@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Telegram WebApp Test</title>
+</head>
+
+<body>
+	<h2 id="status">⏳ Telegram WebApp sinovi...</h2>
+	<script>
+		try {
+			const tg = window.Telegram?.WebApp
+			if (!tg) {
+				document.getElementById("status").innerText =
+					"❌ window.Telegram.WebApp topilmadi!"
+			} else if (tg.initDataUnsafe?.user) {
+				document.getElementById("status").innerText =
+					"✅ Telegram foydalanuvchisi: " + tg.initDataUnsafe.user.first_name
+			} else {
+				document.getElementById("status").innerText =
+					"⚠️ Telegram WebApp bor, lekin foydalanuvchi maʼlumotlari yoʻq."
+			}
+		} catch (e) {
+			document.getElementById("status").innerText = "❌ Xatolik: " + e.message
+		}
+	</script>
+</body>
+
+</html>
