@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/telegram-debug/page.tsx - YANGILANGAN
+// app/telegram/page.tsx - PRODUCTION READY
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -12,135 +12,176 @@ declare global {
 	}
 }
 
-export default function TelegramDebugPage() {
-	const [info, setInfo] = useState<string>('Loading...')
-	const [user, setUser] = useState<any>(null)
+interface TelegramUser {
+	id: number
+	first_name: string
+	last_name?: string
+	username?: string
+	language_code?: string
+}
+
+export default function TelegramApp() {
+	const [user, setUser] = useState<TelegramUser | null>(() => {
+		if (typeof window !== 'undefined') {
+			const tg = window.Telegram?.WebApp
+			return tg?.initDataUnsafe?.user || null
+		}
+		return null
+	})
+	const [isLoading, setIsLoading] = useState(true)
 
 	useEffect(() => {
-		const initTelegram = () => {
-			const tg = window.Telegram?.WebApp
+		const tg = window.Telegram?.WebApp
 
-			if (!tg) {
-				setInfo('❌ Telegram WebApp topilmadi')
-				return
-			}
-
-			// Telegram WebApp ni ishga tushirish
+		if (tg) {
+			// WebApp ni sozlash
 			tg.expand()
 			tg.ready()
+			tg.enableClosingConfirmation()
 
-			// InitData ni olish
-			const initData = tg.initData
-			const initDataUnsafe = tg.initDataUnsafe
-			const userData = initDataUnsafe?.user
+			// Theme change event
+			tg.onEvent('themeChanged', () => {
+				document.documentElement.style.setProperty(
+					'--tg-theme-bg-color',
+					tg.themeParams.bg_color
+				)
+			})
 
-			if (userData) {
-				setUser(userData)
-			}
-
-			const result = {
-				'🚀 STATUS': 'TELEGRAM WEBAPP ISHLAYAPTI! ✅',
-				'👤 Foydalanuvchi': userData
-					? {
-							ID: userData.id,
-							Ism: userData.first_name,
-							Familiya: userData.last_name || "Yo'q",
-							Username: userData.username || "Yo'q",
-					  }
-					: "Foydalanuvchi ma'lumotlari yo'q",
-				'📡 InitData mavjudmi?': !!initData,
-				'🔐 InitData uzunligi': initData?.length || 0,
-				'📊 InitDataUnsafe': initDataUnsafe
-					? Object.keys(initDataUnsafe)
-					: "yo'q",
-				'🌐 Platforma': tg.platform,
-				'📱 Versiya': tg.version,
-				'🎨 Theme': tg.themeParams,
-				'📏 Viewport': tg.viewportHeight,
-			}
-
-			setInfo(JSON.stringify(result, null, 2))
-
-			// Console-da ham chiqarish
-			console.log('=== TELEGRAM WEBAPP DEBUG ===')
-			console.log('User:', userData)
-			console.log('InitData:', initData)
-			console.log('InitDataUnsafe:', initDataUnsafe)
-			console.log('Platform:', tg.platform)
+			// Back button
+			tg.BackButton.show()
+			tg.BackButton.onClick(() => {
+				tg.close()
+			})
 		}
 
-		// Script mavjudligini tekshirish
-		if (window.Telegram?.WebApp) {
-			initTelegram()
-		} else {
-			// Scriptni yuklash
-			const script = document.createElement('script')
-			script.src = 'https://telegram.org/js/telegram-web-app.js'
-			script.async = true
-			script.onload = () => {
-				setTimeout(initTelegram, 100)
-			}
-			document.head.appendChild(script)
-		}
+		// Set loading to false after setup or if no WebApp
+		setTimeout(() => setIsLoading(false), 0)
 	}, [])
 
-	return (
-		<div className='min-h-screen bg-liner-to-br from-blue-50 to-green-50 p-4'>
-			<div className='max-w-2xl mx-auto'>
-				<div className='bg-white rounded-2xl shadow-xl p-6 mt-8'>
-					<h1 className='text-3xl font-bold text-center text-green-600 mb-2'>
-						✅ Telegram WebApp Muvaffaqiyatli!
-					</h1>
-					<p className='text-center text-gray-600 mb-6'>
-						Endi foydalanuvchi malumotlarini olish qoldi
-					</p>
+	const sendDataToBot = () => {
+		const tg = window.Telegram?.WebApp
+		if (tg) {
+			tg.sendData(
+				JSON.stringify({
+					action: 'button_click',
+					user_id: user?.id,
+					timestamp: Date.now(),
+				})
+			)
+			tg.showAlert("Ma'lumot botga yuborildi! ✅")
+		}
+	}
 
-					{user && (
-						<div className='bg-green-50 border border-green-200 rounded-lg p-4 mb-6'>
-							<h2 className='text-xl font-semibold text-green-800 mb-2'>
-								👤 Foydalanuvchi Malumotlari
-							</h2>
-							<p>
-								<strong>ID:</strong> {user.id}
-							</p>
-							<p>
-								<strong>Ism:</strong> {user.first_name}
-							</p>
-							<p>
-								<strong>Familiya:</strong> {user.last_name || "Yo'q"}
-							</p>
-							<p>
-								<strong>Username:</strong> @{user.username || "Yo'q"}
-							</p>
-						</div>
-					)}
-
-					<div className='bg-gray-50 rounded-lg p-4'>
-						<h3 className='text-lg font-semibold mb-3'>🔍 Tafsilotlar:</h3>
-						<pre className='text-sm whitespace-pre-wrap break-all'>{info}</pre>
-					</div>
-
-					<div className='mt-6 flex gap-2'>
-						<button
-							onClick={() => window.location.reload()}
-							className='flex-1 bg-blue-500 text-white py-3 rounded-lg font-semibold'
-						>
-							🔄 Yangilash
-						</button>
-						<button
-							onClick={() => {
-								const tg = window.Telegram?.WebApp
-								if (tg) {
-									tg.showAlert('Salom! Bu test xabari')
-								}
-							}}
-							className='flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold'
-						>
-							📢 Test Alert
-						</button>
-					</div>
+	if (isLoading) {
+		return (
+			<div className='min-h-screen flex items-center justify-center bg-liner-to-br from-blue-500 to-purple-600'>
+				<div className='text-white text-center'>
+					<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4'></div>
+					<p>Yuklanmoqda...</p>
 				</div>
 			</div>
+		)
+	}
+
+	return (
+		<div className='min-h-screen bg-liner-to-br from-blue-500 to-purple-600 text-white'>
+			{/* Header */}
+			<header className='bg-white/10 backdrop-blur-lg p-4 sticky top-0'>
+				<div className='max-w-4xl mx-auto flex justify-between items-center'>
+					<h1 className='text-xl font-bold'>Mening WebAppim</h1>
+					{user && (
+						<div className='text-right'>
+							<p className='font-semibold'>{user.first_name}</p>
+							<p className='text-sm opacity-80'>@{user.username}</p>
+						</div>
+					)}
+				</div>
+			</header>
+
+			{/* Main Content */}
+			<main className='p-4 max-w-4xl mx-auto'>
+				{/* Welcome Section */}
+				<div className='bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 text-center'>
+					<h2 className='text-2xl font-bold mb-2'>Xush kelibsiz! 👋</h2>
+					<p className='opacity-90'>
+						Telegram WebApp ga muvaffaqiyatli ulandingiz
+					</p>
+				</div>
+
+				{/* User Info Card */}
+				{user && (
+					<div className='bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6'>
+						<h3 className='text-xl font-bold mb-4'>👤 Profil Malumotlari</h3>
+						<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+							<div>
+								<p className='text-sm opacity-80'>ID</p>
+								<p className='font-semibold'>{user.id}</p>
+							</div>
+							<div>
+								<p className='text-sm opacity-80'>Ism</p>
+								<p className='font-semibold'>{user.first_name}</p>
+							</div>
+							<div>
+								<p className='text-sm opacity-80'>Familiya</p>
+								<p className='font-semibold'>
+									{user.last_name || 'Mavjud emas'}
+								</p>
+							</div>
+							<div>
+								<p className='text-sm opacity-80'>Username</p>
+								<p className='font-semibold'>
+									@{user.username || 'Mavjud emas'}
+								</p>
+							</div>
+						</div>
+					</div>
+				)}
+
+				{/* Actions */}
+				<div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-6'>
+					<button
+						onClick={sendDataToBot}
+						className='bg-green-500 hover:bg-green-600 text-white py-4 px-6 rounded-2xl font-semibold transition-colors'
+					>
+						📨 Botga Xabar Yuborish
+					</button>
+					<button
+						onClick={() =>
+							window.Telegram?.WebApp.showConfirm(
+								'Haqiqatan ham chiqmoqchimisiz?',
+								() => window.Telegram?.WebApp.close()
+							)
+						}
+						className='bg-red-500 hover:bg-red-600 text-white py-4 px-6 rounded-2xl font-semibold transition-colors'
+					>
+						❌ Dasturdan Chiqish
+					</button>
+				</div>
+
+				{/* Features */}
+				<div className='bg-white/10 backdrop-blur-lg rounded-2xl p-6'>
+					<h3 className='text-xl font-bold mb-4'>✨ Imkoniyatlar</h3>
+					<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+						<div className='text-center p-4 bg-white/5 rounded-xl'>
+							<div className='text-2xl mb-2'>🔐</div>
+							<p>Avtomatik login</p>
+						</div>
+						<div className='text-center p-4 bg-white/5 rounded-xl'>
+							<div className='text-2xl mb-2'>📱</div>
+							<p>Mobile optimized</p>
+						</div>
+						<div className='text-center p-4 bg-white/5 rounded-xl'>
+							<div className='text-2xl mb-2'>⚡</div>
+							<p>Tez va yengil</p>
+						</div>
+					</div>
+				</div>
+			</main>
+
+			{/* Footer */}
+			<footer className='p-4 text-center opacity-70'>
+				<p>Powered by Telegram WebApp & Next.js</p>
+			</footer>
 		</div>
 	)
 }
