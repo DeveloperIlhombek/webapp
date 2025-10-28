@@ -1,82 +1,145 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/telegram-debug/page.tsx - YANGI VERSIYA
+// app/telegram-debug/page.tsx - YANGILANGAN
 'use client'
 
 import { useEffect, useState } from 'react'
 
+declare global {
+	interface Window {
+		Telegram: {
+			WebApp: any
+		}
+	}
+}
+
 export default function TelegramDebugPage() {
 	const [info, setInfo] = useState<string>('Loading...')
-	const [scriptLoaded, setScriptLoaded] = useState(false)
+	const [user, setUser] = useState<any>(null)
 
 	useEffect(() => {
-		// Telegram scriptini qo'lda yuklash
-		const script = document.createElement('script')
-		script.src = 'https://telegram.org/js/telegram-web-app.js'
-		script.async = true
-		script.onload = () => {
-			console.log('✅ Telegram script loaded!')
-			setScriptLoaded(true)
-			checkTelegram()
-		}
-		script.onerror = () => {
-			console.log('❌ Telegram script load failed')
-			checkTelegram()
-		}
-		document.head.appendChild(script)
+		const initTelegram = () => {
+			const tg = window.Telegram?.WebApp
 
-		function checkTelegram() {
-			const tg = (window as any).Telegram?.WebApp
-			const userAgent = navigator.userAgent
-			const location = window.location.href
-			const referrer = document.referrer
-			const isIframe = window.top !== window.self
-			const urlParams = new URLSearchParams(window.location.search)
+			if (!tg) {
+				setInfo('❌ Telegram WebApp topilmadi')
+				return
+			}
+
+			// Telegram WebApp ni ishga tushirish
+			tg.expand()
+			tg.ready()
+
+			// InitData ni olish
+			const initData = tg.initData
+			const initDataUnsafe = tg.initDataUnsafe
+			const userData = initDataUnsafe?.user
+
+			if (userData) {
+				setUser(userData)
+			}
 
 			const result = {
-				'✅ Telegram obyekt bormi?': !!(window as any).Telegram,
-				'✅ Telegram.WebApp bormi?': !!tg,
-				'📦 Script yuklandimi?': scriptLoaded,
-				'🧩 WebApp properties': tg ? Object.keys(tg) : 'yo‘q',
-				'🌐 UserAgent': userAgent,
-				'📍 URL': location,
-				'🔗 URL Parametrlari': Object.fromEntries(urlParams),
-				'↩️ Referrer': referrer || 'bo‘sh',
-				'🪟 WebView ichidami?': isIframe ? 'ha' : 'yo‘q',
-				'📱 InitData mavjudmi?': tg?.initData || 'yo‘q',
-				'👤 User mavjudmi?': tg?.initDataUnsafe?.user ? 'ha' : 'yo‘q',
+				'🚀 STATUS': 'TELEGRAM WEBAPP ISHLAYAPTI! ✅',
+				'👤 Foydalanuvchi': userData
+					? {
+							ID: userData.id,
+							Ism: userData.first_name,
+							Familiya: userData.last_name || "Yo'q",
+							Username: userData.username || "Yo'q",
+					  }
+					: "Foydalanuvchi ma'lumotlari yo'q",
+				'📡 InitData mavjudmi?': !!initData,
+				'🔐 InitData uzunligi': initData?.length || 0,
+				'📊 InitDataUnsafe': initDataUnsafe
+					? Object.keys(initDataUnsafe)
+					: "yo'q",
+				'🌐 Platforma': tg.platform,
+				'📱 Versiya': tg.version,
+				'🎨 Theme': tg.themeParams,
+				'📏 Viewport': tg.viewportHeight,
 			}
 
 			setInfo(JSON.stringify(result, null, 2))
 
-			// Agar Telegram WebApp mavjud bo'lsa, uni ishga tushirish
-			if (tg) {
-				tg.expand()
-				tg.ready()
-				console.log('Telegram WebApp initialized!')
-			}
+			// Console-da ham chiqarish
+			console.log('=== TELEGRAM WEBAPP DEBUG ===')
+			console.log('User:', userData)
+			console.log('InitData:', initData)
+			console.log('InitDataUnsafe:', initDataUnsafe)
+			console.log('Platform:', tg.platform)
 		}
 
-		// 2 soniyadan keyin ham tekshirish
-		setTimeout(checkTelegram, 2000)
-	}, [scriptLoaded])
+		// Script mavjudligini tekshirish
+		if (window.Telegram?.WebApp) {
+			initTelegram()
+		} else {
+			// Scriptni yuklash
+			const script = document.createElement('script')
+			script.src = 'https://telegram.org/js/telegram-web-app.js'
+			script.async = true
+			script.onload = () => {
+				setTimeout(initTelegram, 100)
+			}
+			document.head.appendChild(script)
+		}
+	}, [])
 
 	return (
-		<div className='flex items-center justify-center min-h-screen bg-gray-100 p-4'>
-			<div className='bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl'>
-				<h1 className='text-2xl font-bold mb-4 text-center'>
-					Telegram WebApp Debug
-				</h1>
-				<pre className='text-sm text-left whitespace-pre-wrap break-all'>
-					{info}
-				</pre>
+		<div className='min-h-screen bg-liner-to-br from-blue-50 to-green-50 p-4'>
+			<div className='max-w-2xl mx-auto'>
+				<div className='bg-white rounded-2xl shadow-xl p-6 mt-8'>
+					<h1 className='text-3xl font-bold text-center text-green-600 mb-2'>
+						✅ Telegram WebApp Muvaffaqiyatli!
+					</h1>
+					<p className='text-center text-gray-600 mb-6'>
+						Endi foydalanuvchi malumotlarini olish qoldi
+					</p>
 
-				{/* Qo'shimcha tekshiruv tugmasi */}
-				<button
-					onClick={() => window.location.reload()}
-					className='mt-4 bg-blue-500 text-white px-4 py-2 rounded w-full'
-				>
-					Yangilash
-				</button>
+					{user && (
+						<div className='bg-green-50 border border-green-200 rounded-lg p-4 mb-6'>
+							<h2 className='text-xl font-semibold text-green-800 mb-2'>
+								👤 Foydalanuvchi Malumotlari
+							</h2>
+							<p>
+								<strong>ID:</strong> {user.id}
+							</p>
+							<p>
+								<strong>Ism:</strong> {user.first_name}
+							</p>
+							<p>
+								<strong>Familiya:</strong> {user.last_name || "Yo'q"}
+							</p>
+							<p>
+								<strong>Username:</strong> @{user.username || "Yo'q"}
+							</p>
+						</div>
+					)}
+
+					<div className='bg-gray-50 rounded-lg p-4'>
+						<h3 className='text-lg font-semibold mb-3'>🔍 Tafsilotlar:</h3>
+						<pre className='text-sm whitespace-pre-wrap break-all'>{info}</pre>
+					</div>
+
+					<div className='mt-6 flex gap-2'>
+						<button
+							onClick={() => window.location.reload()}
+							className='flex-1 bg-blue-500 text-white py-3 rounded-lg font-semibold'
+						>
+							🔄 Yangilash
+						</button>
+						<button
+							onClick={() => {
+								const tg = window.Telegram?.WebApp
+								if (tg) {
+									tg.showAlert('Salom! Bu test xabari')
+								}
+							}}
+							className='flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold'
+						>
+							📢 Test Alert
+						</button>
+					</div>
+				</div>
 			</div>
 		</div>
 	)
