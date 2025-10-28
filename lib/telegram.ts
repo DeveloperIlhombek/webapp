@@ -1,44 +1,26 @@
-declare global {
-	interface TelegramUser {
-		id: number
-		is_bot?: boolean
-		first_name: string
-		last_name?: string
-		username?: string
-		language_code?: string
-	}
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// lib/telegram.ts - Ishonchli helper
+export function initTelegramWebApp() {
+	return new Promise(resolve => {
+		const tg = (window as any).Telegram?.WebApp
 
-	interface TelegramWebApp {
-		initDataUnsafe?: {
-			user?: TelegramUser
+		if (tg) {
+			tg.expand()
+			tg.ready()
+			resolve(tg)
+			return
 		}
-		expand: () => void
-	}
 
-	interface Window {
-		Telegram?: {
-			WebApp?: TelegramWebApp
+		// Script yo'q bo'lsa, yuklash
+		const script = document.createElement('script')
+		script.src = 'https://telegram.org/js/telegram-web-app.js'
+		script.async = true
+		script.onload = () => {
+			const loadedTg = (window as any).Telegram.WebApp
+			loadedTg.expand()
+			loadedTg.ready()
+			resolve(loadedTg)
 		}
-	}
+		document.head.appendChild(script)
+	})
 }
-
-export function getTelegramWebApp() {
-	if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-		return window.Telegram.WebApp
-	}
-	return null
-}
-
-export function expandWebApp() {
-	const tg = getTelegramWebApp()
-	if (tg) tg.expand()
-}
-
-export function getTelegramUser() {
-	const tg = getTelegramWebApp()
-	if (tg?.initDataUnsafe?.user) {
-		return tg.initDataUnsafe.user
-	}
-	return null
-}
-// 8446903617:AAE9ULmrxvRuzus8061n1sz4lJrL_PPIFTU
