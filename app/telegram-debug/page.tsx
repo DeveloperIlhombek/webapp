@@ -58,18 +58,11 @@ export default function TelegramDebugPage() {
 					}
 				)
 
+				console.log('Response status:', res.status)
 				const result = await res.json()
-
-				if (res.ok) {
-					setStatus('✅ Ro‘yxatdan o‘tish muvaffaqiyatli!')
-					localStorage.setItem('token', result.access_token)
-					console.log('Auth javobi:', result)
-				} else {
-					setStatus(`❌ Xatolik: ${result.detail || 'Server xatosi'}`)
-				}
-			} catch (error) {
-				console.error('❌ Server bilan aloqa yo‘q:', error)
-				setStatus('❌ Server bilan aloqa yo‘q')
+				console.log('Response body:', result)
+			} catch (err) {
+				console.error('Fetch error:', err)
 			}
 
 			// 👁 Ma’lumotlarni chiqarish
