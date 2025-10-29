@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/telegram-debug/page.tsx - YANGILANGAN
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -15,9 +14,10 @@ declare global {
 export default function TelegramDebugPage() {
 	const [info, setInfo] = useState<string>('Loading...')
 	const [user, setUser] = useState<any>(null)
+	const [status, setStatus] = useState<string>('')
 
 	useEffect(() => {
-		const initTelegram = () => {
+		const initTelegram = async () => {
 			const tg = window.Telegram?.WebApp
 
 			if (!tg) {
@@ -25,19 +25,54 @@ export default function TelegramDebugPage() {
 				return
 			}
 
-			// Telegram WebApp ni ishga tushirish
 			tg.expand()
 			tg.ready()
 
-			// InitData ni olish
 			const initData = tg.initData
 			const initDataUnsafe = tg.initDataUnsafe
 			const userData = initDataUnsafe?.user
 
 			if (userData) {
 				setUser(userData)
+				setStatus('📡 Ma’lumot yuborilmoqda...')
+			} else {
+				setInfo('❌ Foydalanuvchi ma’lumotlari yo‘q')
+				return
 			}
 
+			// ✅ Backendga jo‘natamiz
+			try {
+				const res = await fetch(
+					'https://helminthoid-clumsily-xuan.ngrok-free.dev/api/telegram/verify',
+					{
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							id: userData.id,
+							first_name: userData.first_name,
+							last_name: userData.last_name,
+							username: userData.username,
+							auth_date: initDataUnsafe.auth_date,
+							hash: initDataUnsafe.hash,
+						}),
+					}
+				)
+
+				const result = await res.json()
+
+				if (res.ok) {
+					setStatus('✅ Ro‘yxatdan o‘tish muvaffaqiyatli!')
+					localStorage.setItem('token', result.access_token)
+					console.log('Auth javobi:', result)
+				} else {
+					setStatus(`❌ Xatolik: ${result.detail || 'Server xatosi'}`)
+				}
+			} catch (error) {
+				console.error('❌ Server bilan aloqa yo‘q:', error)
+				setStatus('❌ Server bilan aloqa yo‘q')
+			}
+
+			// 👁 Ma’lumotlarni chiqarish
 			const result = {
 				'🚀 STATUS': 'TELEGRAM WEBAPP ISHLAYAPTI! ✅',
 				'👤 Foydalanuvchi': userData
@@ -62,11 +97,9 @@ export default function TelegramDebugPage() {
 			setInfo(JSON.stringify(result, null, 2))
 		}
 
-		// Script mavjudligini tekshirish
 		if (window.Telegram?.WebApp) {
 			initTelegram()
 		} else {
-			// Scriptni yuklash
 			const script = document.createElement('script')
 			script.src = 'https://telegram.org/js/telegram-web-app.js'
 			script.async = true
@@ -85,10 +118,16 @@ export default function TelegramDebugPage() {
 						✅ Telegram WebApp Muvaffaqiyatli!
 					</h1>
 
+					{status && (
+						<p className='text-center mb-4 text-blue-600 font-medium'>
+							{status}
+						</p>
+					)}
+
 					{user && (
 						<div className='bg-green-50 border border-green-200 rounded-lg p-4 mb-6'>
 							<h2 className='text-xl font-semibold text-green-800 mb-2'>
-								👤 Foydalanuvchi Malumotlari
+								👤 Foydalanuvchi Ma’lumotlari
 							</h2>
 							<p>
 								<strong>ID:</strong> {user.id}
@@ -105,6 +144,9 @@ export default function TelegramDebugPage() {
 						</div>
 					)}
 
+					<pre className='bg-gray-100 p-3 rounded-lg text-sm overflow-auto'>
+						{info}
+					</pre>
 				</div>
 			</div>
 		</div>
