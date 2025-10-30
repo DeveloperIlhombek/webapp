@@ -48,7 +48,7 @@ export default function TelegramAuth() {
 	) => {
 		try {
 			const response = await fetch(
-				'http://127.0.0.1:8000/api/auth/telegram/login',
+				'https://helminthoid-clumsily-xuan.ngrok-free.dev/api/auth/telegram/login',
 				{
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
