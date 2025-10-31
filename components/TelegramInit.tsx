@@ -1,81 +1,91 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { useTelegram } from '../hooks/useTelegram'
 import { useAuthStore } from '../lib/store/auth'
 
 export default function TelegramInit() {
-	const { telegramLogin, user } = useAuthStore()
-	const [telegramData, setTelegramData] = useState<any>(null)
+	const { telegramLogin, user: authUser } = useAuthStore()
+	const { user: telegramUser, isLoading, isTelegramAvailable } = useTelegram()
 
 	useEffect(() => {
-		const initializeTelegram = async () => {
-			try {
-				// Telegram Web App mavjudligini tekshirish
-				if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-					const tg = window.Telegram.WebApp
+		const loginWithTelegram = async () => {
+			if (telegramUser && !authUser) {
+				console.log('🔹 Starting Telegram login process...')
 
-					// Telegram WebApp ni ishga tushirish
-					tg.ready()
-					tg.expand()
-
-					console.log('🔹 Telegram WebApp initialized')
-					console.log('🔹 Init data:', tg.initData)
-					console.log('🔹 User data:', tg.initDataUnsafe?.user)
-
-					// Telegram user ma'lumotlarini olish
-					const tgUser = tg.initDataUnsafe?.user
-
-					if (tgUser) {
-						const userData = {
-							telegram_id: tgUser.id.toString(),
-							first_name: tgUser.first_name || '',
-							last_name: tgUser.last_name || '',
-							username: tgUser.username || `user_${tgUser.id}`,
-						}
-
-						console.log('🔹 Prepared Telegram data:', userData)
-						setTelegramData(userData)
-
-						// Agar user hali login qilmagan bo'lsa
-						if (!user) {
-							console.log('🔹 Attempting Telegram login...')
-							try {
-								await telegramLogin(userData)
-								console.log('✅ Telegram login successful')
-							} catch (error) {
-								console.error('❌ Telegram login failed:', error)
-
-								// Xatoni foydalanuvchiga ko'rsatish
-								if (error instanceof Error) {
-									alert(`Login failed: ${error.message}`)
-								}
-							}
-						}
-					} else {
-						console.log('❌ No Telegram user data found')
-					}
-				} else {
-					console.log(
-						'❌ Telegram WebApp not detected - running in regular browser'
-					)
+				const telegramData = {
+					telegram_id: telegramUser.id.toString(),
+					first_name: telegramUser.first_name,
+					last_name: telegramUser.last_name || '',
+					username: telegramUser.username || `user_${telegramUser.id}`,
 				}
-			} catch (error) {
-				console.error('❌ Telegram initialization error:', error)
+
+				console.log('🔹 Prepared Telegram data:', telegramData)
+
+				try {
+					await telegramLogin(telegramData)
+					console.log('✅ Telegram login successful')
+				} catch (error) {
+					console.error('❌ Telegram login failed:', error)
+				}
 			}
 		}
 
-		initializeTelegram()
-	}, [telegramLogin, user])
+		if (!isLoading && telegramUser) {
+			loginWithTelegram()
+		}
+	}, [telegramUser, authUser, isLoading, telegramLogin])
 
-	// Debug ma'lumotlarni ko'rsatish
-	if (process.env.NODE_ENV === 'development' && telegramData) {
+	// Loading holati
+	if (isLoading && isTelegramAvailable) {
 		return (
-			<div className='mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
-				<h3 className='font-semibold text-blue-800 mb-2'>Telegram Data:</h3>
-				<pre className='text-xs text-blue-700 overflow-auto'>
-					{JSON.stringify(telegramData, null, 2)}
-				</pre>
+			<div className='mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg'>
+				<div className='flex items-center justify-between'>
+					<div className='flex items-center'>
+						<div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2'></div>
+						<span className='text-blue-700'>Loading Telegram data...</span>
+					</div>
+				</div>
+			</div>
+		)
+	}
+
+	// Telegram mavjud emas
+	if (!isTelegramAvailable && !isLoading) {
+		return (
+			<div className='mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg'>
+				<div className='text-yellow-700'>
+					<strong>Note:</strong> Running in regular browser mode.
+					{typeof window !== 'undefined' &&
+						!window.Telegram &&
+						' Telegram WebApp not detected.'}
+				</div>
+			</div>
+		)
+	}
+
+	// Debug ma'lumotlari
+	if (process.env.NODE_ENV === 'development' && telegramUser) {
+		return (
+			<div className='mb-4 p-4 bg-green-50 border border-green-200 rounded-lg'>
+				<h3 className='font-semibold text-green-800 mb-2'>
+					✅ Telegram Data Loaded:
+				</h3>
+				<div className='text-xs text-green-700 space-y-1'>
+					<div>
+						<strong>User ID:</strong> {telegramUser.id}
+					</div>
+					<div>
+						<strong>Name:</strong> {telegramUser.first_name}{' '}
+						{telegramUser.last_name}
+					</div>
+					<div>
+						<strong>Username:</strong> {telegramUser.username || 'N/A'}
+					</div>
+					<div>
+						<strong>Language:</strong> {telegramUser.language_code || 'N/A'}
+					</div>
+				</div>
 			</div>
 		)
 	}
