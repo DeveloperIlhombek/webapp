@@ -4,7 +4,7 @@
 import { create } from 'zustand'
 
 export interface User {
-	id: number
+	id: string // UUID string
 	email: string
 	username: string
 	full_name?: string
@@ -26,7 +26,7 @@ interface AuthState {
 
 const API_URL = 'https://helminthoid-clumsily-xuan.ngrok-free.dev'
 
-export const useAuthStore = create<AuthState>(set => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
 	user: null,
 	isAuthenticated: false,
 	isLoading: false,
@@ -40,7 +40,6 @@ export const useAuthStore = create<AuthState>(set => ({
 				headers: {
 					'Content-Type': 'application/json',
 				},
-				credentials: 'include',
 				body: JSON.stringify({ username, password }),
 			})
 
@@ -51,20 +50,10 @@ export const useAuthStore = create<AuthState>(set => ({
 
 			const data = await response.json()
 			localStorage.setItem('access_token', data.access_token)
+			localStorage.setItem('refresh_token', data.refresh_token)
 
 			// Get user data
-			const userResponse = await fetch(`${API_URL}/api/users/me`, {
-				headers: {
-					Authorization: `Bearer ${data.access_token}`,
-				},
-			})
-
-			if (userResponse.ok) {
-				const user = await userResponse.json()
-				set({ user, isAuthenticated: true, isLoading: false })
-			} else {
-				throw new Error('Failed to get user data')
-			}
+			await get().checkAuth()
 		} catch (error) {
 			set({
 				isLoading: false,
@@ -84,7 +73,6 @@ export const useAuthStore = create<AuthState>(set => ({
 				headers: {
 					'Content-Type': 'application/json',
 				},
-				credentials: 'include',
 				body: JSON.stringify(telegramData),
 			})
 
@@ -109,21 +97,10 @@ export const useAuthStore = create<AuthState>(set => ({
 			console.log('✅ Telegram login response:', data)
 
 			localStorage.setItem('access_token', data.access_token)
+			localStorage.setItem('refresh_token', data.refresh_token)
 
 			// Get user data
-			const userResponse = await fetch(`${API_URL}/api/users/me`, {
-				headers: {
-					Authorization: `Bearer ${data.access_token}`,
-				},
-			})
-
-			if (userResponse.ok) {
-				const user = await userResponse.json()
-				console.log('✅ User data received:', user)
-				set({ user, isAuthenticated: true, isLoading: false })
-			} else {
-				throw new Error('Failed to get user data after login')
-			}
+			await get().checkAuth()
 		} catch (error) {
 			console.error('❌ Telegram login error:', error)
 			set({
@@ -156,37 +133,45 @@ export const useAuthStore = create<AuthState>(set => ({
 		try {
 			await fetch(`${API_URL}/api/auth/logout`, {
 				method: 'POST',
-				credentials: 'include',
 			})
 		} catch (error) {
 			console.error('Logout error:', error)
 		} finally {
 			localStorage.removeItem('access_token')
+			localStorage.removeItem('refresh_token')
 			set({ user: null, isAuthenticated: false })
 		}
 	},
 
 	checkAuth: async () => {
 		const token = localStorage.getItem('access_token')
+		console.log('🔹 checkAuth called, token exists:', !!token)
+
 		if (token) {
 			try {
 				const response = await fetch(`${API_URL}/api/users/me`, {
 					headers: {
-						Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0Z184MDgxMjg0NTkyIiwiZXhwIjoxNzYxOTcyMDE3fQ.pBnSs4yVxTARdVuJAbSCbP6WmLS-APLRZlw9lx6o34g`,
+						Authorization: `Bearer ${token}`,
 					},
 				})
 
+				console.log('🔹 /api/users/me response status:', response.status)
+
 				if (response.ok) {
 					const user = await response.json()
+					console.log('✅ User data received:', user)
 					set({ user, isAuthenticated: true })
 				} else {
+					const errorText = await response.text()
+					console.error('❌ /api/users/me error:', response.status, errorText)
 					localStorage.removeItem('access_token')
+					localStorage.removeItem('refresh_token')
 					set({ user: null, isAuthenticated: false })
 				}
 			} catch (error) {
-				console.log(error)
-
+				console.error('❌ checkAuth fetch error:', error)
 				localStorage.removeItem('access_token')
+				localStorage.removeItem('refresh_token')
 				set({ user: null, isAuthenticated: false })
 			}
 		}
