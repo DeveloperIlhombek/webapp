@@ -172,7 +172,7 @@ export const useAuthStore = create<AuthState>(set => ({
 			try {
 				const response = await fetch(`${API_URL}/api/users/me`, {
 					headers: {
-						Authorization: `Bearer ${token}`,
+						Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0Z184MDgxMjg0NTkyIiwiZXhwIjoxNzYxOTcyMDE3fQ.pBnSs4yVxTARdVuJAbSCbP6WmLS-APLRZlw9lx6o34g`,
 					},
 				})
 
