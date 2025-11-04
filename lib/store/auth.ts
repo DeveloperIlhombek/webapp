@@ -4,7 +4,7 @@
 import { create } from 'zustand'
 
 export interface User {
-	id: string // UUID string
+	id: string
 	email: string
 	username: string
 	full_name?: string
@@ -24,7 +24,7 @@ interface AuthState {
 	clearError: () => void
 }
 
-const API_URL = 'https://helminthoid-clumsily-xuan.ngrok-free.dev'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export const useAuthStore = create<AuthState>((set, get) => ({
 	user: null,
@@ -52,7 +52,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 			localStorage.setItem('access_token', data.access_token)
 			localStorage.setItem('refresh_token', data.refresh_token)
 
-			// Get user data
 			await get().checkAuth()
 		} catch (error) {
 			set({
@@ -66,7 +65,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 	telegramLogin: async (telegramData: any) => {
 		set({ isLoading: true, error: null })
 		try {
-			console.log('🔄 Sending Telegram login request...', telegramData)
+			console.log('🔄 Telegram login:', telegramData)
 
 			const response = await fetch(`${API_URL}/api/auth/telegram-login`, {
 				method: 'POST',
@@ -76,33 +75,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 				body: JSON.stringify(telegramData),
 			})
 
-			console.log('🔹 Response status:', response.status)
-
 			if (!response.ok) {
-				const errorText = await response.text()
-				console.error('❌ Response error text:', errorText)
-
-				let errorDetail = 'Telegram login failed'
-				try {
-					const errorData = JSON.parse(errorText)
-					errorDetail = errorData.detail || errorText
-				} catch {
-					errorDetail = errorText || 'Unknown error'
-				}
-
-				throw new Error(errorDetail)
+				const errorData = await response.json()
+				throw new Error(errorData.detail || 'Telegram login failed')
 			}
 
 			const data = await response.json()
-			console.log('✅ Telegram login response:', data)
-
 			localStorage.setItem('access_token', data.access_token)
 			localStorage.setItem('refresh_token', data.refresh_token)
 
-			// Get user data
 			await get().checkAuth()
 		} catch (error) {
-			console.error('❌ Telegram login error:', error)
 			set({
 				isLoading: false,
 				error: error instanceof Error ? error.message : 'Telegram login failed',
@@ -130,50 +113,38 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 	},
 
 	logout: async () => {
-		try {
-			await fetch(`${API_URL}/api/auth/logout`, {
-				method: 'POST',
-			})
-		} catch (error) {
-			console.error('Logout error:', error)
-		} finally {
-			localStorage.removeItem('access_token')
-			localStorage.removeItem('refresh_token')
-			set({ user: null, isAuthenticated: false })
-		}
+		localStorage.removeItem('access_token')
+		localStorage.removeItem('refresh_token')
+		set({ user: null, isAuthenticated: false })
 	},
 
 	checkAuth: async () => {
 		const token = localStorage.getItem('access_token')
-		console.log('🔹 checkAuth called, token exists:', !!token)
 
-		if (token) {
-			try {
-				const response = await fetch(`${API_URL}/api/users/me`, {
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				})
+		if (!token) {
+			set({ user: null, isAuthenticated: false })
+			return
+		}
 
-				console.log('🔹 /api/users/me response status:', response.status)
+		try {
+			const response = await fetch(`${API_URL}/api/users/me`, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			})
 
-				if (response.ok) {
-					const user = await response.json()
-					console.log('✅ User data received:', user)
-					set({ user, isAuthenticated: true })
-				} else {
-					const errorText = await response.text()
-					console.error('❌ /api/users/me error:', response.status, errorText)
-					localStorage.removeItem('access_token')
-					localStorage.removeItem('refresh_token')
-					set({ user: null, isAuthenticated: false })
-				}
-			} catch (error) {
-				console.error('❌ checkAuth fetch error:', error)
+			if (response.ok) {
+				const user = await response.json()
+				set({ user, isAuthenticated: true })
+			} else {
 				localStorage.removeItem('access_token')
 				localStorage.removeItem('refresh_token')
 				set({ user: null, isAuthenticated: false })
 			}
+		} catch (error) {
+			localStorage.removeItem('access_token')
+			localStorage.removeItem('refresh_token')
+			set({ user: null, isAuthenticated: false })
 		}
 	},
 

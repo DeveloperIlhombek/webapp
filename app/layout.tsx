@@ -18,7 +18,6 @@ export default function RootLayout({
 	return (
 		<html lang='en'>
 			<head>
-				{/* Telegram Web App Script - Head da */}
 				<Script
 					src='https://telegram.org/js/telegram-web-app.js'
 					strategy='beforeInteractive'

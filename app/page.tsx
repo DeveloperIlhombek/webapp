@@ -1,172 +1,257 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
+import { useCallback, useEffect, useState } from 'react'
 
-import { useEffect } from 'react'
-import TelegramInit from '../components/TelegramInit'
-import UserProfile from '../components/UserProfile'
-import { useTelegram } from '../hooks/useTelegram'
-import { useAuthStore } from '../lib/store/auth'
-// import LoginForm from '../components/LoginForm';
+// Constants
+const TELEGRAM_SCRIPT_URL = 'https://telegram.org/js/telegram-web-app.js'
+const SCRIPT_LOAD_TIMEOUT = 5000
 
-export default function Home() {
-	const { user, isAuthenticated, isLoading, error, clearError, checkAuth } =
-		useAuthStore()
-	const { isTelegramAvailable } = useTelegram()
+interface DebugInfo {
+	status: string
+	user?: TelegramUser
+	initDataExists: boolean
+	initDataLength: number
+	initDataUnsafeKeys: string[]
+	platform: string
+	version: string
+	viewportHeight: number
+	viewportStableHeight: number
+	isExpanded: boolean
+	themeParams: any
+}
+
+export default function TelegramDebugPage() {
+	const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null)
+	const [loading, setLoading] = useState(true)
+	const [error, setError] = useState<string | null>(null)
+	const [scriptLoaded, setScriptLoaded] = useState(false)
+
+	const initializeTelegram = useCallback(() => {
+		try {
+			const tg = window.Telegram?.WebApp
+
+			if (!tg) {
+				setError('Telegram WebApp object not found')
+				setLoading(false)
+				return
+			}
+
+			// Safe initialization
+			tg.expand?.()
+			tg.ready?.()
+
+			const userData = tg.initDataUnsafe?.user
+
+			const info: DebugInfo = {
+				status: 'Telegram WebApp is working! ✅',
+				user: userData,
+				initDataExists: !!tg.initData,
+				initDataLength: tg.initData?.length || 0,
+				initDataUnsafeKeys: tg.initDataUnsafe
+					? Object.keys(tg.initDataUnsafe)
+					: [],
+				platform: tg.platform || 'unknown',
+				version: tg.version || 'unknown',
+				viewportHeight: tg.viewportHeight,
+				viewportStableHeight: tg.viewportStableHeight,
+				isExpanded: tg.isExpanded,
+				themeParams: tg.themeParams,
+			}
+
+			setDebugInfo(info)
+			setError(null)
+		} catch (err) {
+			setError(
+				`Initialization error: ${
+					err instanceof Error ? err.message : 'Unknown error'
+				}`
+			)
+		} finally {
+			setLoading(false)
+		}
+	}, [])
+
+	const loadTelegramScript = useCallback(() => {
+		// Check if script is already loaded
+		if (window.Telegram?.WebApp) {
+			setScriptLoaded(true)
+			initializeTelegram()
+			return
+		}
+
+		// Check if script is already in DOM
+		const existingScript = document.querySelector(
+			`script[src="${TELEGRAM_SCRIPT_URL}"]`
+		)
+		if (existingScript) {
+			setScriptLoaded(true)
+			setTimeout(initializeTelegram, 100)
+			return
+		}
+
+		// Load new script
+		const script = document.createElement('script')
+		script.src = TELEGRAM_SCRIPT_URL
+		script.async = true
+
+		const loadTimeout = setTimeout(() => {
+			setError('Script loading timeout')
+			setLoading(false)
+		}, SCRIPT_LOAD_TIMEOUT)
+
+		script.onload = () => {
+			clearTimeout(loadTimeout)
+			setScriptLoaded(true)
+			setTimeout(initializeTelegram, 100)
+		}
+
+		script.onerror = () => {
+			clearTimeout(loadTimeout)
+			setError('Failed to load Telegram script')
+			setLoading(false)
+		}
+
+		document.head.appendChild(script)
+	}, [initializeTelegram])
 
 	useEffect(() => {
-		// Agar Telegram mavjud bo'lmasa, oddiy auth tekshirish
-		if (!isTelegramAvailable) {
-			checkAuth()
+		loadTelegramScript()
+	}, [loadTelegramScript])
+
+	const formatDebugInfo = (info: DebugInfo) => {
+		return {
+			'🚀 Status': info.status,
+			'👤 User': info.user
+				? {
+						ID: info.user.id,
+						'First Name': info.user.first_name,
+						'Last Name': info.user.last_name || 'Not provided',
+						Username: info.user.username
+							? `@${info.user.username}`
+							: 'Not provided',
+						Language: info.user.language_code || 'Not provided',
+				  }
+				: 'No user data',
+			'📡 Init Data': {
+				Exists: info.initDataExists ? 'Yes ✅' : 'No ❌',
+				Length: `${info.initDataLength} characters`,
+				'Unsafe Keys':
+					info.initDataUnsafeKeys.length > 0
+						? info.initDataUnsafeKeys.join(', ')
+						: 'None',
+			},
+			'🌐 Platform': info.platform,
+			'📱 Version': info.version,
+			'📏 Viewport': {
+				Height: `${info.viewportHeight}px`,
+				'Stable Height': `${info.viewportStableHeight}px`,
+			},
+			'🎨 Theme Params': info.themeParams || 'Not available',
+			'📊 Expanded': info.isExpanded ? 'Yes ✅' : 'No ❌',
 		}
-	}, [isTelegramAvailable, checkAuth])
+	}
+
+	if (loading) {
+		return (
+			<div className='min-h-screen bg-liner-to-br from-blue-50 to-green-50 flex items-center justify-center'>
+				<div className='bg-white rounded-2xl shadow-xl p-8 text-center'>
+					<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4'></div>
+					<p className='text-gray-600'>Loading Telegram WebApp...</p>
+				</div>
+			</div>
+		)
+	}
 
 	return (
-		<div className='min-h-screen bg-liner-to-br from-blue-50 to-indigo-100'>
-			<TelegramInit />
-
-			<div className='container mx-auto px-4 py-8'>
-				{/* Header */}
-				<header className='text-center mb-8'>
-					<h1 className='text-4xl font-bold text-gray-800 mb-2'>EduSystem</h1>
-					<p className='text-gray-600'>
-						{isTelegramAvailable ? 'Telegram Web App' : 'Web Platform'}
-					</p>
-					{isTelegramAvailable && (
-						<div className='mt-2 inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm'>
-							<span className='w-2 h-2 bg-green-500 rounded-full mr-2'></span>
-							Telegram Mode Active
-						</div>
-					)}
-				</header>
-
-				{/* Xato ko'rsatish */}
-				{error && (
-					<div className='max-w-md mx-auto mb-4 p-4 bg-red-50 border border-red-200 rounded-lg'>
-						<div className='flex items-center justify-between'>
-							<div className='flex items-center'>
-								{/* <span className='text-red-600 font-medium'>{error}</span> */}
-								<span className='text-red-600 font-medium'>Xatolik xabari</span>
-							</div>
-							<button
-								onClick={clearError}
-								className='text-red-600 hover:text-red-800'
-							>
-								✕
-							</button>
-						</div>
+		<div className='min-h-screen bg-liner-to-br from-blue-50 to-green-50 p-4'>
+			<div className='max-w-4xl mx-auto'>
+				<div className='bg-white rounded-2xl shadow-xl p-6 mt-8'>
+					<div
+						className={`p-4 rounded-lg mb-6 ${
+							error
+								? 'bg-red-50 border border-red-200'
+								: 'bg-green-50 border border-green-200'
+						}`}
+					>
+						<h1
+							className={`text-3xl font-bold text-center mb-2 ${
+								error ? 'text-red-600' : 'text-green-600'
+							}`}
+						>
+							{error
+								? '❌ Telegram WebApp Error'
+								: '✅ Telegram WebApp Successful!'}
+						</h1>
+						<p className='text-center text-gray-600'>
+							{error ? error : 'Your Telegram WebApp is working correctly'}
+						</p>
 					</div>
-				)}
 
-				{/* Asosiy kontent */}
-				<div className='max-w-md mx-auto'>
-					{isLoading ? (
-						<LoadingScreen isTelegram={isTelegramAvailable} />
-					) : isAuthenticated && user ? (
-						<UserProfile user={user} isTelegram={isTelegramAvailable} />
-					) : isTelegramAvailable ? (
-						<TelegramWaitingScreen />
-					) : (
-						"Login qilish formasi shu yerda bo'ladi"
-						// <LoginForm />
+					{debugInfo?.user && (
+						<div className='bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6'>
+							<h2 className='text-xl font-semibold text-blue-800 mb-3'>
+								👤 User Information
+							</h2>
+							<div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+								<div>
+									<strong className='text-gray-700'>ID:</strong>{' '}
+									{debugInfo.user.id}
+								</div>
+								<div>
+									<strong className='text-gray-700'>First Name:</strong>{' '}
+									{debugInfo.user.first_name}
+								</div>
+								<div>
+									<strong className='text-gray-700'>Last Name:</strong>{' '}
+									{debugInfo.user.last_name || 'Not provided'}
+								</div>
+								<div>
+									<strong className='text-gray-700'>Username:</strong>{' '}
+									{debugInfo.user.username
+										? `@${debugInfo.user.username}`
+										: 'Not provided'}
+								</div>
+								{debugInfo.user.language_code && (
+									<div>
+										<strong className='text-gray-700'>Language:</strong>{' '}
+										{debugInfo.user.language_code}
+									</div>
+								)}
+							</div>
+						</div>
+					)}
+
+					{debugInfo && (
+						<div className='mt-6'>
+							<div className='flex justify-between items-center mb-3'>
+								<h3 className='text-lg font-medium text-gray-900'>
+									Debug Information
+								</h3>
+								<span className='text-sm text-gray-500'>
+									Script: {scriptLoaded ? 'Loaded ✅' : 'Loading...'}
+								</span>
+							</div>
+							<pre className='whitespace-pre-wrap bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto'>
+								{JSON.stringify(formatDebugInfo(debugInfo), null, 2)}
+							</pre>
+						</div>
+					)}
+
+					{error && !debugInfo && (
+						<div className='mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg'>
+							<h3 className='text-lg font-medium text-yellow-800 mb-2'>
+								Troubleshooting Tips
+							</h3>
+							<ul className='list-disc list-inside text-yellow-700 space-y-1'>
+								<li>Make sure youre opening this page from Telegram</li>
+								<li>Check if the bot is properly configured</li>
+								<li>Verify the Telegram WebApp is enabled in bot settings</li>
+								<li>Try refreshing the page</li>
+							</ul>
+						</div>
 					)}
 				</div>
-
-				{/* Debug Information */}
-				{process.env.NODE_ENV === 'development' && (
-					<DebugInfo
-						isTelegramAvailable={isTelegramAvailable}
-						isAuthenticated={isAuthenticated}
-						isLoading={isLoading}
-						user={user}
-					/>
-				)}
 			</div>
-		</div>
-	)
-}
-
-// Yuklanish ekrani komponenti
-function LoadingScreen({ isTelegram }: { isTelegram: boolean }) {
-	return (
-		<div className='bg-white rounded-lg shadow-lg p-6 text-center'>
-			<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4'></div>
-			<p className='text-gray-600'>
-				{isTelegram ? 'Connecting to Telegram...' : 'Loading...'}
-			</p>
-			<p className='text-sm text-gray-500 mt-2'>Please wait...</p>
-		</div>
-	)
-}
-
-// Telegram kutish ekrani
-function TelegramWaitingScreen() {
-	return (
-		<div className='bg-white rounded-lg shadow-lg p-6 text-center'>
-			<div className='w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4'>
-				<span className='text-2xl'>📱</span>
-			</div>
-			<h2 className='text-xl font-semibold text-gray-800 mb-2'>
-				Telegram Authentication
-			</h2>
-			<p className='text-gray-600 mb-4'>Setting up your Telegram account...</p>
-			<div className='animate-pulse text-sm text-gray-500'>
-				Initializing Telegram Web App
-			</div>
-		</div>
-	)
-}
-
-// Debug ma'lumotlari komponenti
-function DebugInfo({
-	isTelegramAvailable,
-	isAuthenticated,
-	isLoading,
-	user,
-}: any) {
-	return (
-		<div className='mt-8 max-w-md mx-auto bg-gray-50 border border-gray-200 rounded-lg p-4'>
-			<h3 className='font-semibold text-gray-800 mb-2'>Debug Information:</h3>
-			<div className='text-xs text-gray-600 space-y-1'>
-				<div>
-					<strong>Telegram Available:</strong>{' '}
-					{isTelegramAvailable ? 'Yes' : 'No'}
-				</div>
-				<div>
-					<strong>Authenticated:</strong> {isAuthenticated ? 'Yes' : 'No'}
-				</div>
-				<div>
-					<strong>Loading:</strong> {isLoading ? 'Yes' : 'No'}
-				</div>
-				<div>
-					<strong>User:</strong> {user ? user.username : 'None'}
-				</div>
-				<div>
-					<strong>Window.Telegram:</strong>{' '}
-					{typeof window !== 'undefined' && window.Telegram ? 'Yes' : 'No'}
-				</div>
-				{typeof window !== 'undefined' && window.Telegram?.WebApp && (
-					<>
-						<div>
-							<strong>Init Data:</strong>{' '}
-							{window.Telegram.WebApp.initData ? 'Exists' : 'Empty'}
-						</div>
-						<div>
-							<strong>User Data:</strong>{' '}
-							{window.Telegram.WebApp.initDataUnsafe?.user ? 'Exists' : 'None'}
-						</div>
-					</>
-				)}
-			</div>
-			{user && (
-				<details className='mt-2'>
-					<summary className='cursor-pointer text-sm text-gray-700'>
-						User Details
-					</summary>
-					<pre className='text-xs text-gray-600 mt-2 overflow-auto'>
-						{JSON.stringify(user, null, 2)}
-					</pre>
-				</details>
-			)}
 		</div>
 	)
 }
