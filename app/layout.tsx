@@ -1,13 +1,14 @@
-import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import Script from 'next/script'
 import './globals.css'
+// import { TelegramProvider } from '@/components/telegram/telegram-provider'
+import Header from '@/components/layout/header'
+import { TelegramProvider } from '@/components/telegram/telegram-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata: Metadata = {
-	title: 'EduSystem - Telegram Web App',
-	description: 'Educational System with Telegram Integration',
+export const metadata = {
+	title: 'Telegram WebApp',
+	description: 'A Next.js application for Telegram WebApp',
 }
 
 export default function RootLayout({
@@ -17,13 +18,14 @@ export default function RootLayout({
 }) {
 	return (
 		<html lang='en'>
-			<head>
-				<Script
-					src='https://telegram.org/js/telegram-web-app.js'
-					strategy='beforeInteractive'
-				/>
-			</head>
-			<body className={inter.className}>{children}</body>
+			<body className={inter.className}>
+				<TelegramProvider>
+					<div className='min-h-screen bg-gray-50'>
+						<Header />
+						<main className='container mx-auto py-8'>{children}</main>
+					</div>
+				</TelegramProvider>
+			</body>
 		</html>
 	)
 }

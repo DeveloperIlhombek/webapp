@@ -1,4 +1,3 @@
-// types/telegram.d.ts
 declare global {
 	interface TelegramUser {
 		id: number
@@ -60,5 +59,4 @@ declare global {
 	}
 }
 
-// File module bo'lishi uchun export qilamiz
 export {}
