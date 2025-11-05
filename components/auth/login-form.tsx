@@ -5,20 +5,32 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/lib/store/useAuthStore'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export default function LoginForm() {
 	const [username, setUsername] = useState('')
 	const [password, setPassword] = useState('')
 	const { login, isLoading, error, clearError } = useAuthStore()
+	const router = useRouter()
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
+
+		if (!username.trim() || !password.trim()) {
+			alert('Please fill in all fields')
+			return
+		}
+
 		clearError()
 		try {
 			await login(username, password)
+			// ✅ Login muvaffaqiyatli bo'lgandan so'ng dashboardga yo'naltiramiz
+			console.log('✅ Login successful, redirecting to dashboard...')
+			router.push('/dashboard')
 		} catch (err) {
-			// Error handled in store
+			// Error store tomonidan boshqariladi
+			console.error('Login error in form:', err)
 		}
 	}
 
@@ -43,9 +55,13 @@ export default function LoginForm() {
 							id='username'
 							type='text'
 							value={username}
-							onChange={e => setUsername(e.target.value)}
+							onChange={e => {
+								clearError()
+								setUsername(e.target.value)
+							}}
 							required
 							placeholder='Enter your username'
+							disabled={isLoading}
 						/>
 					</div>
 
@@ -57,15 +73,38 @@ export default function LoginForm() {
 							id='password'
 							type='password'
 							value={password}
-							onChange={e => setPassword(e.target.value)}
+							onChange={e => {
+								clearError()
+								setPassword(e.target.value)
+							}}
 							required
 							placeholder='Enter your password'
+							disabled={isLoading}
 						/>
 					</div>
 
 					<Button type='submit' disabled={isLoading} className='w-full'>
-						{isLoading ? 'Logging in...' : 'Login'}
+						{isLoading ? (
+							<div className='flex items-center space-x-2'>
+								<div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div>
+								<span>Logging in...</span>
+							</div>
+						) : (
+							'Login'
+						)}
 					</Button>
+
+					<div className='text-center'>
+						<p className='text-sm text-gray-600'>
+							Dont have an account?{' '}
+							<a
+								href='/auth/register'
+								className='text-blue-600 hover:underline'
+							>
+								Sign up
+							</a>
+						</p>
+					</div>
 				</form>
 			</CardContent>
 		</Card>

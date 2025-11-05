@@ -1,13 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import {
-	createContext,
-	ReactNode,
-	useContext,
-	useEffect,
-	useState,
-} from 'react'
+import { createContext, ReactNode, useEffect, useState } from 'react'
 
 interface TelegramContextType {
 	isTelegramLoaded: boolean
@@ -15,9 +9,11 @@ interface TelegramContextType {
 	user: any
 }
 
-const TelegramContext = createContext<TelegramContextType | undefined>(
-	undefined
-)
+export const TelegramContext = createContext<TelegramContextType>({
+	isTelegramLoaded: false,
+	webApp: null,
+	user: null,
+})
 
 export function TelegramProvider({ children }: { children: ReactNode }) {
 	const [isTelegramLoaded, setIsTelegramLoaded] = useState(false)
@@ -33,6 +29,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
 				setWebApp(tg)
 				setUser(tg.initDataUnsafe?.user)
 				setIsTelegramLoaded(true)
+				console.log('✅ Telegram WebApp initialized in provider')
 			}
 		}
 
@@ -45,6 +42,9 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
 			script.onload = () => {
 				setTimeout(initTelegram, 100)
 			}
+			script.onerror = () => {
+				console.error('❌ Failed to load Telegram script')
+			}
 			document.head.appendChild(script)
 		}
 	}, [])
@@ -54,12 +54,4 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
 			{children}
 		</TelegramContext.Provider>
 	)
-}
-
-export function useTelegram() {
-	const context = useContext(TelegramContext)
-	if (context === undefined) {
-		throw new Error('useTelegram must be used within a TelegramProvider')
-	}
-	return context
 }

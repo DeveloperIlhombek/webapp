@@ -1,8 +1,8 @@
-import { Inter } from 'next/font/google'
-import './globals.css'
-// import { TelegramProvider } from '@/components/telegram/telegram-provider'
 import Header from '@/components/layout/header'
 import { TelegramProvider } from '@/components/telegram/telegram-provider'
+import TelegramInit from '@/components/ui/TelegramInit'
+import { Inter } from 'next/font/google'
+import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,9 +20,10 @@ export default function RootLayout({
 		<html lang='en'>
 			<body className={inter.className}>
 				<TelegramProvider>
+					<TelegramInit />
 					<div className='min-h-screen bg-gray-50'>
 						<Header />
-						<main className='container mx-auto py-8'>{children}</main>
+						<main className='container mx-auto py-8 px-4'>{children}</main>
 					</div>
 				</TelegramProvider>
 			</body>

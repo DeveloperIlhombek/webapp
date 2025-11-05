@@ -2,12 +2,21 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useTelegram } from '@/hooks/useTelegram'
 import { useAuthStore } from '@/lib/store/useAuthStore'
-import { useTelegram } from './telegram-provider'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function TelegramAuth() {
 	const { isTelegramLoaded, user: telegramUser } = useTelegram()
-	const { telegramLogin, isLoading } = useAuthStore()
+	const { telegramLogin, isLoading, isAuthenticated } = useAuthStore()
+	const router = useRouter()
+
+	useEffect(() => {
+		if (isAuthenticated) {
+			router.push('/profile')
+		}
+	}, [isAuthenticated, router])
 
 	const handleTelegramLogin = async () => {
 		if (!telegramUser) return
@@ -20,6 +29,8 @@ export default function TelegramAuth() {
 				username: telegramUser.username,
 				language_code: telegramUser.language_code,
 			})
+			// Login muvaffaqiyatli bo'lgandan so'ng, profile sahifasiga yo'naltiramiz
+			router.push('/profile')
 		} catch (error) {
 			console.error('Telegram login failed:', error)
 		}
