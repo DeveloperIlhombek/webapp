@@ -24,7 +24,6 @@ export default function TelegramDebugPage() {
 	const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
-	const [scriptLoaded, setScriptLoaded] = useState(false)
 
 	const initializeTelegram = useCallback(() => {
 		try {
@@ -74,7 +73,6 @@ export default function TelegramDebugPage() {
 	const loadTelegramScript = useCallback(() => {
 		// Check if script is already loaded
 		if (window.Telegram?.WebApp) {
-			setScriptLoaded(true)
 			initializeTelegram()
 			return
 		}
@@ -84,7 +82,6 @@ export default function TelegramDebugPage() {
 			`script[src="${TELEGRAM_SCRIPT_URL}"]`
 		)
 		if (existingScript) {
-			setScriptLoaded(true)
 			setTimeout(initializeTelegram, 100)
 			return
 		}
@@ -101,7 +98,6 @@ export default function TelegramDebugPage() {
 
 		script.onload = () => {
 			clearTimeout(loadTimeout)
-			setScriptLoaded(true)
 			setTimeout(initializeTelegram, 100)
 		}
 
@@ -117,39 +113,6 @@ export default function TelegramDebugPage() {
 	useEffect(() => {
 		loadTelegramScript()
 	}, [loadTelegramScript])
-
-	const formatDebugInfo = (info: DebugInfo) => {
-		return {
-			'🚀 Status': info.status,
-			'👤 User': info.user
-				? {
-						ID: info.user.id,
-						'First Name': info.user.first_name,
-						'Last Name': info.user.last_name || 'Not provided',
-						Username: info.user.username
-							? `@${info.user.username}`
-							: 'Not provided',
-						Language: info.user.language_code || 'Not provided',
-				  }
-				: 'No user data',
-			'📡 Init Data': {
-				Exists: info.initDataExists ? 'Yes ✅' : 'No ❌',
-				Length: `${info.initDataLength} characters`,
-				'Unsafe Keys':
-					info.initDataUnsafeKeys.length > 0
-						? info.initDataUnsafeKeys.join(', ')
-						: 'None',
-			},
-			'🌐 Platform': info.platform,
-			'📱 Version': info.version,
-			'📏 Viewport': {
-				Height: `${info.viewportHeight}px`,
-				'Stable Height': `${info.viewportStableHeight}px`,
-			},
-			'🎨 Theme Params': info.themeParams || 'Not available',
-			'📊 Expanded': info.isExpanded ? 'Yes ✅' : 'No ❌',
-		}
-	}
 
 	if (loading) {
 		return (
@@ -218,36 +181,6 @@ export default function TelegramDebugPage() {
 									</div>
 								)}
 							</div>
-						</div>
-					)}
-
-					{debugInfo && (
-						<div className='mt-6'>
-							<div className='flex justify-between items-center mb-3'>
-								<h3 className='text-lg font-medium text-gray-900'>
-									Debug Information
-								</h3>
-								<span className='text-sm text-gray-500'>
-									Script: {scriptLoaded ? 'Loaded ✅' : 'Loading...'}
-								</span>
-							</div>
-							<pre className='whitespace-pre-wrap bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto'>
-								{JSON.stringify(formatDebugInfo(debugInfo), null, 2)}
-							</pre>
-						</div>
-					)}
-
-					{error && !debugInfo && (
-						<div className='mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg'>
-							<h3 className='text-lg font-medium text-yellow-800 mb-2'>
-								Troubleshooting Tips
-							</h3>
-							<ul className='list-disc list-inside text-yellow-700 space-y-1'>
-								<li>Make sure youre opening this page from Telegram</li>
-								<li>Check if the bot is properly configured</li>
-								<li>Verify the Telegram WebApp is enabled in bot settings</li>
-								<li>Try refreshing the page</li>
-							</ul>
 						</div>
 					)}
 				</div>

@@ -24,7 +24,7 @@ interface AuthState {
 	clearError: () => void
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_URL = 'https://helminthoid-clumsily-xuan.ngrok-free.dev'
 
 export const useAuthStore = create<AuthState>((set, get) => ({
 	user: null,
@@ -142,6 +142,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 				set({ user: null, isAuthenticated: false })
 			}
 		} catch (error) {
+			console.log(error)
+
 			localStorage.removeItem('access_token')
 			localStorage.removeItem('refresh_token')
 			set({ user: null, isAuthenticated: false })
