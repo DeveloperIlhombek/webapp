@@ -124,16 +124,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 		try {
 			console.log('🔄 Telegram login attempt:', telegramData)
 
+			// Backendga mos formatda ma'lumot yuborish
+			const backendTelegramData = {
+				id: String(telegramData.id), // string formatda
+				first_name: telegramData.first_name,
+				last_name: telegramData.last_name || null,
+				username: telegramData.username || null,
+				language_code: telegramData.language_code || null,
+			}
+
 			const response = await fetch(`${API_URL}/api/auth/telegram-login`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify(telegramData),
+				body: JSON.stringify(backendTelegramData),
 			})
 
 			const contentType = response.headers.get('content-type')
-			console.log('📨 Telegram response content-type:', contentType)
+			console.log('📨 Telegram login response status:', response.status)
+			console.log('📨 Content-Type:', contentType)
 
 			if (!response.ok) {
 				let errorData
@@ -146,7 +156,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 						`Server error: ${response.status} ${response.statusText}`
 					)
 				}
-				throw new Error(errorData.detail || 'Telegram login failed')
+				throw new Error(
+					errorData.detail || `Telegram login failed: ${response.status}`
+				)
 			}
 
 			if (!contentType?.includes('application/json')) {
@@ -156,7 +168,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 			}
 
 			const data = await response.json()
-			console.log('✅ Telegram login successful')
+			console.log('✅ Telegram login successful, tokens received')
+
+			if (!data.access_token) {
+				throw new Error('No access token in response')
+			}
 
 			localStorage.setItem('access_token', data.access_token)
 			if (data.refresh_token) {
@@ -164,6 +180,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 			}
 
 			// User ma'lumotlarini olish
+			console.log('🔄 Fetching user data after telegram login...')
 			const userResponse = await fetch(`${API_URL}/api/users/me`, {
 				headers: {
 					Authorization: `Bearer ${data.access_token}`,
@@ -172,16 +189,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 			})
 
 			if (userResponse.ok) {
-				const user = await userResponse.json()
-				set({ user, isAuthenticated: true, isLoading: false, error: null })
+				const userData = await userResponse.json()
+				console.log('✅ User data received after telegram login:', userData)
+				set({
+					user: userData,
+					isAuthenticated: true,
+					isLoading: false,
+					error: null,
+				})
 			} else {
+				console.error(
+					'❌ Failed to get user data after telegram login:',
+					userResponse.status
+				)
 				set({ isAuthenticated: true, isLoading: false, error: null })
 			}
 		} catch (error) {
 			console.error('❌ Telegram login error:', error)
+			const errorMessage =
+				error instanceof Error ? error.message : 'Telegram login failed'
 			set({
 				isLoading: false,
-				error: error instanceof Error ? error.message : 'Telegram login failed',
+				error: errorMessage,
 			})
 			throw error
 		}
