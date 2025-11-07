@@ -123,7 +123,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 		set({ isLoading: true, error: null })
 		try {
 			console.log('🔄 Telegram login attempt:', telegramData)
-
+			const controller = new AbortController()
+			const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 soniya
+			
 			// Backendga mos formatda ma'lumot yuborish
 			const backendTelegramData = {
 				id: String(telegramData.id), // string formatda
@@ -139,27 +141,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 					'Content-Type': 'application/json',
 				},
 				body: JSON.stringify(backendTelegramData),
+				signal: controller.signal,
+				mode: 'cors',
 			})
+			clearTimeout(timeoutId)
 
 			const contentType = response.headers.get('content-type')
 			console.log('📨 Telegram login response status:', response.status)
 			console.log('📨 Content-Type:', contentType)
 
 			if (!response.ok) {
-				let errorData
-				if (contentType?.includes('application/json')) {
-					errorData = await response.json()
-				} else {
-					const text = await response.text()
-					console.error('❌ Non-JSON error response:', text.substring(0, 200))
-					throw new Error(
-						`Server error: ${response.status} ${response.statusText}`
-					)
-				}
-				throw new Error(
-					errorData.detail || `Telegram login failed: ${response.status}`
-				)
-			}
+      // Mobile uchun batafsil xato ma'lumoti
+      const errorText = await response.text()
+      console.error('📱 Mobile server error:', errorText)
+      
+      // Agar HTML qaytarsa (ngrok landing page)
+      if (errorText.includes('<!DOCTYPE') || errorText.includes('<html')) {
+        throw new Error('Server returned HTML instead of JSON. Check backend URL.')
+      }
+      
+      try {
+        const errorData = JSON.parse(errorText)
+        throw new Error(errorData.detail || `Server error: ${response.status}`)
+      } catch {
+        throw new Error(`Server error: ${response.status} - ${errorText.substring(0, 100)}`)
+      }
+    }
 
 			if (!contentType?.includes('application/json')) {
 				const text = await response.text()

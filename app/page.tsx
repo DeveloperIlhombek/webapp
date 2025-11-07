@@ -2,12 +2,12 @@
 
 import LoginForm from '@/components/auth/login-form'
 import RegisterForm from '@/components/auth/register-form'
+import MobileTelegramDebug from '@/components/telegram/mobile-debug'
 import TelegramAuth from '@/components/telegram/telegram-auth'
 import TelegramDebug from '@/components/telegram/telegram-debug'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-
 export default function HomePage() {
 	const { checkAuth, isAuthenticated, isLoading } = useAuthStore()
 	const router = useRouter()
@@ -68,7 +68,8 @@ export default function HomePage() {
 				</div>
 				<RegisterForm />
 			</div>
-
+			{/* Mobile Debug - faqat development uchun */}
+			{process.env.NODE_ENV === 'development' && <MobileTelegramDebug />}
 			{/* Debug Information */}
 			<TelegramDebug />
 		</div>
