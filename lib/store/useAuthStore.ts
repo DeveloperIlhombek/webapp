@@ -125,7 +125,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 			console.log('🔄 Telegram login attempt:', telegramData)
 			const controller = new AbortController()
 			const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 soniya
-			
+
 			// Backendga mos formatda ma'lumot yuborish
 			const backendTelegramData = {
 				id: String(telegramData.id), // string formatda
@@ -135,6 +135,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 				language_code: telegramData.language_code || null,
 			}
 
+			console.log('📤 Sending to:', `${API_URL}/api/auth/telegram-login`)
+
 			const response = await fetch(`${API_URL}/api/auth/telegram-login`, {
 				method: 'POST',
 				headers: {
@@ -142,31 +144,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 				},
 				body: JSON.stringify(backendTelegramData),
 				signal: controller.signal,
-				mode: 'cors',
 			})
 			clearTimeout(timeoutId)
 
 			const contentType = response.headers.get('content-type')
-			console.log('📨 Telegram login response status:', response.status)
+			console.log('📨 Response status:', response.status)
 			console.log('📨 Content-Type:', contentType)
 
 			if (!response.ok) {
-      // Mobile uchun batafsil xato ma'lumoti
-      const errorText = await response.text()
-      console.error('📱 Mobile server error:', errorText)
-      
-      // Agar HTML qaytarsa (ngrok landing page)
-      if (errorText.includes('<!DOCTYPE') || errorText.includes('<html')) {
-        throw new Error('Server returned HTML instead of JSON. Check backend URL.')
-      }
-      
-      try {
-        const errorData = JSON.parse(errorText)
-        throw new Error(errorData.detail || `Server error: ${response.status}`)
-      } catch {
-        throw new Error(`Server error: ${response.status} - ${errorText.substring(0, 100)}`)
-      }
-    }
+				const errorText = await response.text()
+				console.error('❌ Server error response:', errorText)
+
+				// Agar HTML qaytarsa
+				if (errorText.includes('<!DOCTYPE') || errorText.includes('<html')) {
+					throw new Error(
+						'Server returned HTML instead of JSON. Please check backend configuration.'
+					)
+				}
+
+				try {
+					const errorData = JSON.parse(errorText)
+					throw new Error(
+						errorData.detail || `Server error: ${response.status}`
+					)
+				} catch {
+					throw new Error(
+						`Server error: ${response.status} - ${errorText.substring(0, 100)}`
+					)
+				}
+			}
 
 			if (!contentType?.includes('application/json')) {
 				const text = await response.text()
@@ -187,7 +193,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 			}
 
 			// User ma'lumotlarini olish
-			console.log('🔄 Fetching user data after telegram login...')
+			console.log('🔄 Fetching user data...')
 			const userResponse = await fetch(`${API_URL}/api/users/me`, {
 				headers: {
 					Authorization: `Bearer ${data.access_token}`,
@@ -197,7 +203,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
 			if (userResponse.ok) {
 				const userData = await userResponse.json()
-				console.log('✅ User data received after telegram login:', userData)
+				console.log('✅ User data received:', userData)
 				set({
 					user: userData,
 					isAuthenticated: true,
@@ -205,10 +211,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 					error: null,
 				})
 			} else {
-				console.error(
-					'❌ Failed to get user data after telegram login:',
-					userResponse.status
-				)
+				console.error('❌ Failed to get user data:', userResponse.status)
 				set({ isAuthenticated: true, isLoading: false, error: null })
 			}
 		} catch (error) {

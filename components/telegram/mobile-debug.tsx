@@ -4,77 +4,73 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useState } from 'react'
 
+const API_URL =
+	process.env.NEXT_PUBLIC_API_URL ||
+	'https://helminthoid-clumsily-xuan.ngrok-free.dev'
+
 export default function MobileDebug() {
 	const [debugInfo, setDebugInfo] = useState<string>('')
 	const [isTesting, setIsTesting] = useState(false)
 
 	const testBackendConnection = async () => {
 		setIsTesting(true)
-		setDebugInfo('Testing backend connection...\n')
+		setDebugInfo('Testing backend connection...\n\n')
 
 		try {
-			const API_URL = 'https://helminthoid-clumsily-xuan.ngrok-free.dev'
-
-			setDebugInfo(prev => prev + `🔗 API URL: ${API_URL}\n`)
-
-			// Test 1: Backend health check
-			setDebugInfo(prev => prev + '🔄 Testing backend health...\n')
+			// Test 1: Health check
+			setDebugInfo(prev => prev + '🔍 Testing /api/auth/health...\n')
 			const healthResponse = await fetch(`${API_URL}/api/auth/health`)
+			const healthText = await healthResponse.text()
+			setDebugInfo(prev => prev + `📨 Status: ${healthResponse.status}\n`)
 			setDebugInfo(
-				prev => prev + `🏥 Health status: ${healthResponse.status}\n`
+				prev => prev + `📨 Response: ${healthText.substring(0, 200)}\n\n`
 			)
 
-			if (healthResponse.ok) {
-				const healthData = await healthResponse.json()
-				setDebugInfo(
-					prev => prev + `🏥 Health data: ${JSON.stringify(healthData)}\n`
-				)
+			// Test 2: Test telegram login endpoint
+			setDebugInfo(prev => prev + '🔍 Testing /api/auth/telegram-login...\n')
+			const testData = {
+				id: '123456789',
+				first_name: 'Test',
+				last_name: 'User',
+				username: 'testuser',
+				language_code: 'en',
 			}
 
-			// Test 2: Test request
-			setDebugInfo(prev => prev + '🔄 Testing POST request...\n')
-			const testResponse = await fetch(`${API_URL}/api/auth/telegram-login`, {
+			const loginResponse = await fetch(`${API_URL}/api/auth/telegram-login`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify({
-					id: 'test_mobile_user',
-					first_name: 'Mobile',
-					last_name: 'Test',
-					username: 'mobiletest',
-				}),
+				body: JSON.stringify(testData),
 			})
 
+			const loginText = await loginResponse.text()
+			setDebugInfo(prev => prev + `📨 Status: ${loginResponse.status}\n`)
 			setDebugInfo(
-				prev => prev + `📨 Test response status: ${testResponse.status}\n`
+				prev => prev + `📨 Response: ${loginText.substring(0, 200)}\n\n`
 			)
-
-			if (testResponse.ok) {
-				const testData = await testResponse.json()
-				setDebugInfo(
-					prev => prev + `✅ Test successful: ${JSON.stringify(testData)}\n`
-				)
-			} else {
-				const errorText = await testResponse.text()
-				setDebugInfo(prev => prev + `❌ Test failed: ${errorText}\n`)
-			}
 		} catch (error) {
 			console.error('Mobile debug error:', error)
-			setDebugInfo(prev => prev + `❌ Connection error: ${error}\n`)
+			setDebugInfo(prev => prev + `❌ Error: ${error}\n\n`)
 		} finally {
 			setIsTesting(false)
 		}
 	}
 
 	return (
-		<Card className='w-full max-w-md mx-auto mt-4'>
+		<Card className='w-full max-w-md mx-auto'>
 			<CardHeader>
 				<CardTitle className='text-lg font-bold text-center'>
-					Mobile Debug
+					Backend Connection Test
 				</CardTitle>
 			</CardHeader>
 			<CardContent className='space-y-4'>
+				<div className='text-sm text-gray-600'>
+					<p>
+						<strong>API URL:</strong> {API_URL}
+					</p>
+				</div>
+
 				<Button
 					onClick={testBackendConnection}
 					disabled={isTesting}
@@ -92,14 +88,13 @@ export default function MobileDebug() {
 
 				<div className='text-xs text-gray-600'>
 					<p>
-						<strong>Common Mobile Issues:</strong>
+						<strong>Common Issues:</strong>
 					</p>
 					<ul className='list-disc list-inside mt-2 space-y-1'>
-						<li>Internet connection</li>
-						<li>Backend server status</li>
+						<li>Backend server not running</li>
+						<li>Wrong API URL</li>
 						<li>CORS configuration</li>
-						<li>SSL certificates</li>
-						<li>Network timeouts</li>
+						<li>Network connectivity</li>
 					</ul>
 				</div>
 			</CardContent>
