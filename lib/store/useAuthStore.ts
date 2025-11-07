@@ -128,17 +128,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
 			// Backendga mos formatda ma'lumot yuborish
 			const backendTelegramData = {
-				// id: telegramData.id, // string formatda
-				// first_name: telegramData.first_name,
-				// last_name: telegramData.last_name || null,
-				// username: telegramData.username || null,
-				// language_code: telegramData.language_code || null,
-
-				id: 'b34f2520-3c4c-4aaf-9255-e81b4173a337',
-				first_name: 'First',
-				last_name: 'Second',
-				username: 'tg_8081284592',
-				language_code: 'en',
+				id: String(telegramData.id), // string formatda
+				first_name: telegramData.first_name,
+				last_name: telegramData.last_name || null,
+				username: telegramData.username || null,
+				language_code: telegramData.language_code || null,
 			}
 
 			console.log('📤 Sending to:', `${API_URL}/api/auth/telegram-login`)
