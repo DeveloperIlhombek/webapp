@@ -133,7 +133,7 @@ export default function Header() {
 
 										{/* Menu items */}
 										<div className='py-2'>
-											<a
+											<Link
 												href='/profile'
 												className='flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50'
 												onClick={() => setIsDropdownOpen(false)}
@@ -152,9 +152,9 @@ export default function Header() {
 													/>
 												</svg>
 												<span>Profile</span>
-											</a>
+											</Link>
 
-											<a
+											<Link
 												href='/settings'
 												className='flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50'
 												onClick={() => setIsDropdownOpen(false)}
@@ -179,7 +179,7 @@ export default function Header() {
 													/>
 												</svg>
 												<span>Settings</span>
-											</a>
+											</Link>
 										</div>
 
 										{/* Logout */}
