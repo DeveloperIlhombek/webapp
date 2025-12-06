@@ -28,7 +28,7 @@ const API_URL =
 	process.env.NEXT_PUBLIC_API_URL ||
 	'https://helminthoid-clumsily-xuan.ngrok-free.dev'
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
 	user: null,
 	isAuthenticated: false,
 	isLoading: false,
