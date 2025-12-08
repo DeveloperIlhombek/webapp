@@ -29,11 +29,11 @@ export default function TelegramAuth() {
 				first_name: telegramUser.first_name,
 				last_name: telegramUser.last_name || '',
 				username: telegramUser.username || '',
-				language_code: telegramUser.language_code || '',
+				language_code: telegramUser.language_code || 'en',
 			})
 
 			console.log('✅ Mobile Telegram login successful')
-			router.push('/dashboard')
+			router.push('/profile')
 		} catch (err) {
 			console.error('❌ Mobile Telegram login failed:', err)
 
