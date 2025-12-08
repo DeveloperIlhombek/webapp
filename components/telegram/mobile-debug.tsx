@@ -25,30 +25,6 @@ export default function MobileDebug() {
 			setDebugInfo(
 				prev => prev + `📨 Response: ${healthText.substring(0, 200)}\n\n`
 			)
-
-			// Test 2: Test telegram login endpoint
-			setDebugInfo(prev => prev + '🔍 Testing /api/auth/telegram-login...\n')
-			const testData = {
-				id: '123456789',
-				first_name: 'Test',
-				last_name: 'User',
-				username: 'testuser',
-				language_code: 'en',
-			}
-
-			const loginResponse = await fetch(`${API_URL}/api/auth/telegram-login`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(testData),
-			})
-
-			const loginText = await loginResponse.text()
-			setDebugInfo(prev => prev + `📨 Status: ${loginResponse.status}\n`)
-			setDebugInfo(
-				prev => prev + `📨 Response: ${loginText.substring(0, 200)}\n\n`
-			)
 		} catch (error) {
 			console.error('Mobile debug error:', error)
 			setDebugInfo(prev => prev + `❌ Error: ${error}\n\n`)
