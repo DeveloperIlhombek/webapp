@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/lib/store/useAuthStore'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
@@ -97,12 +98,12 @@ export default function LoginForm() {
 					<div className='text-center'>
 						<p className='text-sm text-gray-600'>
 							Dont have an account?{' '}
-							<a
+							<Link
 								href='/auth/register'
 								className='text-blue-600 hover:underline'
 							>
 								Sign up
-							</a>
+							</Link>
 						</p>
 					</div>
 				</form>

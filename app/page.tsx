@@ -1,7 +1,5 @@
 'use client'
 
-import LoginForm from '@/components/auth/login-form'
-import RegisterForm from '@/components/auth/register-form'
 import MobileTelegramDebug from '@/components/telegram/mobile-debug'
 import TelegramAuth from '@/components/telegram/telegram-auth'
 import TelegramDebug from '@/components/telegram/telegram-debug'
@@ -55,8 +53,7 @@ export default function HomePage() {
 					Welcome to Telegram WebApp
 				</h1>
 				<p className='text-xl text-gray-600 max-w-2xl mx-auto'>
-					Experience seamless authentication with both traditional login and
-					Telegram integration.
+					Oddiy kir yoki telegram orqali kir
 				</p>
 			</div>
 
@@ -64,9 +61,7 @@ export default function HomePage() {
 			<div className='grid grid-cols-1 lg:grid-cols-2 gap-8 items-start'>
 				<div className='space-y-8'>
 					<TelegramAuth />
-					<LoginForm />
 				</div>
-				<RegisterForm />
 			</div>
 			{/* Mobile Debug - faqat development uchun */}
 			{process.env.NODE_ENV === 'development' && <MobileTelegramDebug />}

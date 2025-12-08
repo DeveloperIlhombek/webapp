@@ -28,7 +28,7 @@ const API_URL =
 	process.env.NEXT_PUBLIC_API_URL ||
 	'https://helminthoid-clumsily-xuan.ngrok-free.dev'
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>(set => ({
 	user: null,
 	isAuthenticated: false,
 	isLoading: false,
@@ -36,56 +36,32 @@ export const useAuthStore = create<AuthState>((set) => ({
 
 	login: async (username: string, password: string) => {
 		set({ isLoading: true, error: null })
-		try {
-			console.log('🔄 Login attempt:', { username })
 
+		try {
 			const response = await fetch(`${API_URL}/api/auth/login`, {
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ username, password }),
 			})
 
-			// Response content type ni tekshiramiz
-			const contentType = response.headers.get('content-type')
-			console.log('📨 Response content-type:', contentType)
-
 			if (!response.ok) {
-				let errorData
-				if (contentType?.includes('application/json')) {
-					errorData = await response.json()
-				} else {
-					const text = await response.text()
-					console.error('❌ Non-JSON error response:', text.substring(0, 200))
-					throw new Error(
-						`Server error: ${response.status} ${response.statusText}`
-					)
-				}
-				throw new Error(errorData.detail || `Login failed: ${response.status}`)
-			}
-
-			// JSON response ni o'qishdan oldin tekshiramiz
-			if (!contentType?.includes('application/json')) {
-				const text = await response.text()
-				console.error('❌ Expected JSON but got:', text.substring(0, 200))
-				throw new Error('Server returned non-JSON response')
+				const errorData = await response.json()
+				throw new Error(errorData.detail || 'Login failed')
 			}
 
 			const data = await response.json()
-			console.log('✅ Login successful, tokens received')
 
 			if (!data.access_token) {
-				throw new Error('No access token in response')
+				throw new Error('Token not found')
 			}
 
 			localStorage.setItem('access_token', data.access_token)
+
 			if (data.refresh_token) {
 				localStorage.setItem('refresh_token', data.refresh_token)
 			}
 
 			// User ma'lumotlarini olish
-			console.log('🔄 Fetching user data...')
 			const userResponse = await fetch(`${API_URL}/api/users/me`, {
 				headers: {
 					Authorization: `Bearer ${data.access_token}`,
@@ -94,27 +70,23 @@ export const useAuthStore = create<AuthState>((set) => ({
 			})
 
 			if (userResponse.ok) {
-				const userData = await userResponse.json()
-				console.log('✅ User data received:', userData)
-				set({
-					user: userData,
-					isAuthenticated: true,
-					isLoading: false,
-					error: null,
-				})
+				// Content-Type tekshirish
+				const contentType = userResponse.headers.get('content-type')
+				if (contentType && contentType.includes('application/json')) {
+					const userData = await userResponse.json()
+					set({ user: userData, isAuthenticated: true, isLoading: false })
+				} else {
+					// Agar JSON bo'lmasa, HTML xato sahifasi qaytgan bo'lishi mumkin
+					// Bunda user ni null qilib, lekin isAuthenticated ni true qilamiz
+					set({ user: null, isAuthenticated: true, isLoading: false })
+				}
 			} else {
-				console.error('❌ Failed to get user data:', userResponse.status)
-				// User ma'lumotlari olinmasa ham, token borligi uchun authenticated deb hisoblaymiz
-				set({ isAuthenticated: true, isLoading: false, error: null })
+				set({ isAuthenticated: true, isLoading: false })
 			}
 		} catch (error) {
-			console.error('❌ Login error:', error)
 			const errorMessage =
 				error instanceof Error ? error.message : 'Login failed'
-			set({
-				isLoading: false,
-				error: errorMessage,
-			})
+			set({ isLoading: false, error: errorMessage })
 			throw error
 		}
 	},
@@ -229,8 +201,6 @@ export const useAuthStore = create<AuthState>((set) => ({
 	register: async (userData: any) => {
 		set({ error: null, isLoading: true })
 		try {
-			console.log('🔄 Registration attempt:', userData)
-
 			const response = await fetch(`${API_URL}/api/auth/register`, {
 				method: 'POST',
 				headers: {
@@ -247,14 +217,14 @@ export const useAuthStore = create<AuthState>((set) => ({
 					errorData = await response.json()
 				} else {
 					const text = await response.text()
-					throw new Error(`Server error: ${response.status}`)
+					throw new Error(`Server error: ${response.status} ${text}`)
 				}
 				throw new Error(errorData.detail || 'Registration failed')
 			}
 
 			if (!contentType?.includes('application/json')) {
 				const text = await response.text()
-				throw new Error('Server returned non-JSON response')
+				throw new Error(`Server json qaytarmqyapti : ${text}`)
 			}
 
 			const result = await response.json()
@@ -284,7 +254,6 @@ export const useAuthStore = create<AuthState>((set) => ({
 
 	checkAuth: async () => {
 		const token = localStorage.getItem('access_token')
-		console.log('🔍 Checking auth, token exists:', !!token)
 
 		if (!token) {
 			set({ user: null, isAuthenticated: false, isLoading: false })
@@ -302,17 +271,20 @@ export const useAuthStore = create<AuthState>((set) => ({
 			})
 
 			if (response.ok) {
-				const user = await response.json()
-				console.log('✅ Auth check successful, user:', user)
-				set({ user, isAuthenticated: true, isLoading: false })
+				const contentType = response.headers.get('content-type')
+				if (contentType && contentType.includes('application/json')) {
+					const user = await response.json()
+					set({ user, isAuthenticated: true, isLoading: false })
+				} else {
+					// Agar JSON bo'lmasa, user ni null qilib qo'yamiz, lekin token borligi uchun isAuthenticated true
+					set({ user: null, isAuthenticated: true, isLoading: false })
+				}
 			} else {
-				console.log('❌ Auth check failed, clearing tokens')
 				localStorage.removeItem('access_token')
 				localStorage.removeItem('refresh_token')
 				set({ user: null, isAuthenticated: false, isLoading: false })
 			}
-		} catch (error) {
-			console.error('❌ Auth check error:', error)
+		} catch {
 			localStorage.removeItem('access_token')
 			localStorage.removeItem('refresh_token')
 			set({ user: null, isAuthenticated: false, isLoading: false })
