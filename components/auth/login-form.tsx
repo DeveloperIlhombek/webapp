@@ -28,7 +28,7 @@ export default function LoginForm() {
 			await login(username, password)
 			// ✅ Login muvaffaqiyatli bo'lgandan so'ng dashboardga yo'naltiramiz
 			console.log('✅ Login successful, redirecting to dashboard...')
-			router.push('/dashboard')
+			router.push('/profile')
 		} catch (err) {
 			// Error store tomonidan boshqariladi
 			console.error('Login error in form:', err)

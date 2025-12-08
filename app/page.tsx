@@ -18,7 +18,7 @@ export default function HomePage() {
 	useEffect(() => {
 		if (isAuthenticated && !isLoading) {
 			console.log('✅ User is authenticated, redirecting to dashboard...')
-			router.push('/dashboard')
+			router.push('/profile')
 		}
 	}, [isAuthenticated, isLoading, router])
 
