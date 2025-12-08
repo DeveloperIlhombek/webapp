@@ -262,8 +262,9 @@ export const useAuthStore = create<AuthState>(set => ({
 					const user = await response.json()
 					set({ user, isAuthenticated: true, isLoading: false })
 				} else {
+					const user = await response.json()
 					// Agar JSON bo'lmasa, user ni null qilib qo'yamiz, lekin token borligi uchun isAuthenticated true
-					set({ user: null, isAuthenticated: true, isLoading: false })
+					set({ user: user, isAuthenticated: true, isLoading: false })
 				}
 			} else {
 				localStorage.removeItem('access_token')

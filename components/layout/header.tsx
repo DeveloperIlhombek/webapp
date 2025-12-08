@@ -219,6 +219,7 @@ export default function Header() {
 								</Button>
 								<Button
 									asChild
+									variant={'destructive'}
 									size='sm'
 									className='bg-liner-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700'
 								>
