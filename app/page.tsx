@@ -1,8 +1,8 @@
 'use client'
 
-import MobileTelegramDebug from '@/components/telegram/mobile-debug'
+// import MobileTelegramDebug from '@/components/telegram/mobile-debug'
 import TelegramAuth from '@/components/telegram/telegram-auth'
-import TelegramDebug from '@/components/telegram/telegram-debug'
+// import TelegramDebug from '@/components/telegram/telegram-debug'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
@@ -50,7 +50,7 @@ export default function HomePage() {
 			{/* Hero Section */}
 			<div className='text-center'>
 				<h1 className='text-4xl font-bold text-gray-900 mb-4'>
-					Welcome to Telegram WebApp
+					Telegram WebAppga Xush kelibsiz
 				</h1>
 				<p className='text-xl text-gray-600 max-w-2xl mx-auto'>
 					Oddiy kir yoki telegram orqali kir
@@ -64,9 +64,9 @@ export default function HomePage() {
 				</div>
 			</div>
 			{/* Mobile Debug - faqat development uchun */}
-			{process.env.NODE_ENV === 'development' && <MobileTelegramDebug />}
+			{/* {process.env.NODE_ENV === 'development' && <MobileTelegramDebug />} */}
 			{/* Debug Information */}
-			<TelegramDebug />
+			{/* <TelegramDebug /> */}
 		</div>
 	)
 }

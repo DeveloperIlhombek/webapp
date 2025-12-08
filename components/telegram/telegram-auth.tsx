@@ -44,7 +44,7 @@ export default function TelegramAuth() {
 			// Mobile uchun user-friendly xabar
 			if (message.includes('Network error') || message.includes('timeout')) {
 				alert(
-					'Internet connection problem. Please check your connection and try again.'
+					'Internet bilan aloqa muammosi. Iltimos, internet aloqangizni tekshiring.'
 				)
 			}
 		}
