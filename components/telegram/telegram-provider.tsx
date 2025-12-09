@@ -43,14 +43,6 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
 				setUser(tg.initDataUnsafe?.user)
 				setInitData(tg.initData || '')
 				setIsTelegramLoaded(true)
-
-				// Alert o'rniga console.log ishlatamiz
-				console.log('✅ Telegram WebApp initialized')
-				console.log('📱 Platform:', tg.platform)
-				console.log('📱 Version:', tg.version)
-				console.log('👤 User:', tg.initDataUnsafe?.user)
-				console.log('📡 Init Data exists:', !!tg.initData)
-				console.log('📡 Init Data length:', tg.initData?.length || 0)
 			} else {
 				console.log('❌ Telegram WebApp not found')
 				setIsTelegramLoaded(true) // Telegram bo'lmasa ham loadingni to'xtatamiz
@@ -61,14 +53,12 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
 		if (window.Telegram?.WebApp) {
 			initTelegram()
 		} else {
-			console.log('🔄 Loading Telegram script...')
 
 			const script = document.createElement('script')
 			script.src = 'https://telegram.org/js/telegram-web-app.js'
 			script.async = true
 
 			script.onload = () => {
-				console.log('✅ Telegram script loaded')
 				setTimeout(() => {
 					initTelegram()
 				}, 500)

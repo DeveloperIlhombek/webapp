@@ -4,8 +4,21 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthStore } from '@/lib/store/useAuthStore'
 
+//const user profile
+
+// const user = {
+// 	id: 1,
+// 	email: 'user@example.com',
+// 	username: 'user123',
+// 	full_name: 'John Doe',
+// 	telegram_id: '123456789',
+// 	created_at: '2023-01-01T00:00:00Z',
+// 	updated_at: '2023-01-01T00:00:00Z',
+// }
+
 export default function Profile() {
 	const { user, logout } = useAuthStore()
+	console.log('user' + user)
 
 	if (!user) {
 		return "Ma'lumotlar topilmadi"

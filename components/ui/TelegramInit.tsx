@@ -12,7 +12,7 @@ export default function TelegramInit() {
 				tg.ready()
 				tg.expand()
 				setIsInitialized(true)
-				console.log('✅ Telegram WebApp initialized')
+				console.log('✅ Telegram WebApp yuritildi')
 			}
 		}
 

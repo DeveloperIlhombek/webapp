@@ -9,7 +9,7 @@ import { useEffect } from 'react'
 export default function HomePage() {
 	const { checkAuth, isAuthenticated, isLoading } = useAuthStore()
 	const router = useRouter()
-
+	
 	useEffect(() => {
 		checkAuth()
 	}, [checkAuth])
@@ -17,7 +17,9 @@ export default function HomePage() {
 	// ✅ Agar foydalanuvchi allaqachon authenticated bo'lsa, uni dashboardga yo'naltiramiz
 	useEffect(() => {
 		if (isAuthenticated && !isLoading) {
-			console.log('✅ User is authenticated, redirecting to dashboard...')
+			console.log(
+				'✅ User is authenticated, redirecting to dashboard profile...'
+			)
 			router.push('/profile')
 		}
 	}, [isAuthenticated, isLoading, router])

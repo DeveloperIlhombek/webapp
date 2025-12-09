@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-'use client'
+// 'use client'
 
 import { create } from 'zustand'
 
@@ -241,6 +241,21 @@ export const useAuthStore = create<AuthState>(set => ({
 	checkAuth: async () => {
 		const token = localStorage.getItem('access_token')
 
+		const response = await fetch(`${API_URL}/api/users/me`, {
+			headers: {
+				Authorization: `Bearer ${token}`,
+				Accept: 'application/json',
+			},
+		})
+
+		console.log('URL:', response.url)
+		console.log('STATUS:', response.status)
+		console.log('REDIRECTED:', response.redirected)
+		console.log('CONTENT-TYPE:', response.headers.get('content-type'))
+
+		const text = await response.text()
+		console.log('BODY:', text)
+
 		if (!token) {
 			set({ user: null, isAuthenticated: false, isLoading: false })
 			return
@@ -248,36 +263,38 @@ export const useAuthStore = create<AuthState>(set => ({
 
 		set({ isLoading: true })
 
-		try {
-			const response = await fetch(`${API_URL}/api/users/me`, {
-				headers: {
-					Authorization: `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			})
+		// try {
+		// 	const response = await fetch(`${API_URL}/api/users/me`, {
+		// 		headers: {
+		// 			Authorization: `Bearer ${token}`,
+		// 			Accept: 'application/json',
+		// 		},
+		// 	})
 
-			if (response.ok) {
-				const contentType = response.headers.get('content-type')
-				if (contentType && contentType.includes('application/json')) {
-					const user = await response.json()
-					set({ user, isAuthenticated: true, isLoading: false })
-				} else {
-					const user = await response.json()
-					// Agar JSON bo'lmasa, user ni null qilib qo'yamiz, lekin token borligi uchun isAuthenticated true
-					set({ user: user, isAuthenticated: true, isLoading: false })
-				}
-			} else {
-				localStorage.removeItem('access_token')
-				localStorage.removeItem('refresh_token')
-				set({ user: null, isAuthenticated: false, isLoading: false })
-			}
-		} catch {
-			localStorage.removeItem('access_token')
-			localStorage.removeItem('refresh_token')
-			set({ user: null, isAuthenticated: false, isLoading: false })
-		}
+		// 	// JSONni faqat BIR MARTA o'qing
+		// 	const contentType = response.headers.get('content-type')
+
+		// 	if (!response.ok) {
+		// 		set({ user: null, isAuthenticated: false, isLoading: false })
+		// 		return
+		// 	}
+
+		// 	if (contentType && contentType.includes('application/json')) {
+		// 		const user = await response.json()
+		// 		console.log('API returned JSON:', user)
+		// 		set({ user, isAuthenticated: true, isLoading: false })
+		// 	} else {
+		// 		// HTML yoki boshqa format qaytdi
+		// 		const text = await response.text()
+		// 		console.error('HTML returned instead of JSON:', text)
+
+		// 		set({ user: null, isAuthenticated: false, isLoading: false })
+		// 	}
+		// } catch (err) {
+		// 	console.error('Fetch error:', err)
+		// 	set({ user: null, isAuthenticated: false, isLoading: false })
+		// }
 	},
-
 	clearError: () => set({ error: null }),
 }))
 function extractUserFromToken(token: string): User | null {
